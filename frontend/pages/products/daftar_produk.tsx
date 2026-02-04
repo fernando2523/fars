@@ -62,6 +62,7 @@ export default function DaftarProduk() {
     getsupplier();
     gethistoripo();
     gethistoriso();
+    getbrand
   }, []);
 
 
@@ -105,6 +106,21 @@ export default function DaftarProduk() {
     } finally {
       setisLoading(false);
     }
+  }
+
+  async function getbrand() {
+    setisLoading(true);
+    await axios({
+      method: "get",
+      url: `${process.env.NEXT_PUBLIC_HOST}/v1/getbrand`,
+    })
+      .then(function (response) {
+        setdatabrand(response.data.data_brand);
+        setisLoading(false);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
   }
 
   const [page, setPage] = useState(1);
