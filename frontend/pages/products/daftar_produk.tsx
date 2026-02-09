@@ -62,7 +62,7 @@ export default function DaftarProduk() {
     getsupplier();
     gethistoripo();
     gethistoriso();
-    getbrand
+    getbrand();
   }, []);
 
 
@@ -106,21 +106,6 @@ export default function DaftarProduk() {
     } finally {
       setisLoading(false);
     }
-  }
-
-  async function getbrand() {
-    setisLoading(true);
-    await axios({
-      method: "get",
-      url: `${process.env.NEXT_PUBLIC_HOST}/v1/getbrand`,
-    })
-      .then(function (response) {
-        setdatabrand(response.data.data_brand);
-        setisLoading(false);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
   }
 
   const [page, setPage] = useState(1);
@@ -341,6 +326,13 @@ export default function DaftarProduk() {
     clearErrors,
     formState: { errors },
   } = useForm({
+    // defaultValues: {
+    //     edit_produk: '',
+    //     edit_brand: '',
+    //     edit_kategori: '',
+    //     edit_kualitas: '',
+    //     edit_harga: '',
+    // }
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -375,6 +367,8 @@ export default function DaftarProduk() {
     index: number
   ) {
     setid(id);
+    console.log("brand", brand);
+
     setValue("edit_produk", produk);
     setValue("edit_brand", brand);
     setValue("edit_kategori", kategori);
@@ -1421,6 +1415,20 @@ export default function DaftarProduk() {
     Cookies.get("auth_role") === "HEAD-WAREHOUSE";
 
   const isDesktop = screenSize.width > 1200;
+
+  async function getbrand() {
+    await axios({
+      method: "get",
+      url: `${process.env.NEXT_PUBLIC_HOST}/v1/getbrand`,
+    })
+      .then(function (response) {
+        setdatabrand(response.data.data_brand);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  }
+
 
   return (
     <div className="p-2 h-[100%] max-h-full overflow-y-auto pl-10 pr-5">

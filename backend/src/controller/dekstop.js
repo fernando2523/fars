@@ -763,6 +763,213 @@ const getHistoryDetail = async (req, res) => {
   }
 };
 
+const getlistbelanja = async (req, res) => {
+  const data = req.body;
+  try {
+    const result = await Models.getlistbelanja(data);
+    res.json({
+      result: result,
+      data: data,
+    });
+  } catch (error) {
+    res.json({
+      message: "Server Error",
+      serverMessage: error,
+    });
+  }
+};
+
+const inputlistbelanja = async (req, res) => {
+  const data = req.body;
+  try {
+    const result = await Models.inputlistbelanja(data);
+    res.json({
+      result: result,
+      data: data,
+    });
+  } catch (error) {
+    res.json({
+      message: "Server Error",
+      serverMessage: error,
+    });
+  }
+};
+
+const updatesupplier = async (req, res) => {
+  const data = req.body;
+  try {
+    const result = await Models.updatesupplier(data);
+    res.json({
+      result: result,
+      data: data,
+    });
+  } catch (error) {
+    res.json({
+      message: "Server Error",
+      serverMessage: error,
+    });
+  }
+};
+
+const updatestatus = async (req, res) => {
+  const data = req.body;
+  try {
+    const result = await Models.updatestatus(data);
+    res.json({
+      result: result,
+      data: data,
+    });
+  } catch (error) {
+    res.json({
+      message: "Server Error",
+      serverMessage: error,
+    });
+  }
+};
+
+const updatemprice_listbelanja = async (req, res) => {
+  const data = req.body;
+  try {
+    const result = await Models.updatemprice_listbelanja(data);
+    res.json({
+      result: result,
+      data: data,
+    });
+  } catch (error) {
+    res.json({
+      message: "Server Error",
+      serverMessage: error,
+    });
+  }
+};
+
+const updateacc_listbelanja = async (req, res) => {
+  const data = req.body;
+  try {
+    const result = await Models.updateacc_listbelanja(data);
+    res.json({
+      result: result,
+      data: data,
+    });
+  } catch (error) {
+    res.json({
+      message: "Server Error",
+      serverMessage: error,
+    });
+  }
+};
+
+const updateresi = async (req, res) => {
+  const data = req.body;
+  try {
+    const result = await Models.updateresi(data);
+    res.json({
+      result: result,
+      data: data,
+    });
+  } catch (error) {
+    res.json({
+      message: "Server Error",
+      serverMessage: error,
+    });
+  }
+};
+
+const deletemassal_listbelanja = async (req, res) => {
+  const data = req.body;
+  try {
+    const result = await Models.deletemassal_listbelanja(data);
+    res.json({
+      result: result,
+      data: data,
+    });
+  } catch (error) {
+    res.json({
+      message: "Server Error",
+      serverMessage: error,
+    });
+  }
+};
+
+const addparameter = async (req, res) => {
+  const data = req.body;
+  try {
+    const result = await Models.addparameter(data);
+    res.json({
+      result: result,
+      data: data,
+    });
+  } catch (error) {
+    res.json({
+      message: "Server Error",
+      serverMessage: error,
+    });
+  }
+};
+
+const getparameter = async (req, res) => {
+  const data = req.body;
+  try {
+    const result = await Models.getparameter(data);
+    res.json({
+      result: result,
+    });
+  } catch (error) {
+    res.json({
+      message: "Server Error",
+      serverMessage: error,
+    });
+  }
+};
+
+const editparameter = async (req, res) => {
+  const data = req.body;
+  try {
+    const result = await Models.editparameter(data);
+    res.json({
+      result: result,
+      data: data,
+    });
+  } catch (error) {
+    res.json({
+      message: "Server Error",
+      serverMessage: error,
+    });
+  }
+};
+
+const deleteparameter = async (req, res) => {
+  const data = req.body;
+  try {
+    const result = await Models.deleteparameter(data);
+    res.json({
+      result: result,
+      data: data,
+    });
+  } catch (error) {
+    res.json({
+      message: "Server Error",
+      serverMessage: error,
+    });
+  }
+};
+
+const insertmassal = async (req, res) => {
+  const data = req.body;
+  try {
+    const result = await Models.insertmassal(data);
+    res.json({
+      result: result,
+      data: data,
+    });
+  } catch (error) {
+    res.json({
+      message: "Server Error",
+      serverMessage: error,
+    });
+  }
+};
+
 module.exports = {
   getKaryawan,
   getStore,
@@ -813,4 +1020,17 @@ module.exports = {
   login_on_enter,
   histories_recap,
   getHistoryDetail,
+  getlistbelanja,
+  inputlistbelanja,
+  updatesupplier,
+  updatestatus,
+  updatemprice_listbelanja,
+  updateacc_listbelanja,
+  updateresi,
+  deletemassal_listbelanja,
+  addparameter,
+  getparameter,
+  editparameter,
+  deleteparameter,
+  insertmassal,
 };

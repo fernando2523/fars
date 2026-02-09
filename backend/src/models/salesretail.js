@@ -145,31 +145,6 @@ const productsSalesretail = async (body) => {
       });
     }
 
-    // for (let index = 0; index < query_nota.length; index++) {
-
-    //     datas.push({
-    //         id: query_nota[index].id,
-    //         id_produk: query_nota[index].id_nota,
-    //         id_ware: query_nota[index].id_ware,
-    //         id_brand: query_nota[index].id_brand,
-    //         id_category: query_nota[index].id_category,
-    //         tanggal_upload: query_nota[index].tanggal_upload,
-    //         produk: query_nota[index].produk,
-    //         deskripsi: query_nota[index].deskripsi,
-    //         quality: query_nota[index].quality,
-    //         n_price: query_nota[index].m_price,
-    //         r_price: query_nota[index].m_price,
-    //         g_price: query_nota[index].m_price,
-    //         img: 'box.png',
-    //         users: query_nota[index].users,
-    //         variation_sales: [{
-    //             size: query_nota[index].size,
-    //             qty: query_nota[index].qty,
-    //         }],
-    //         variationcount: 1,
-    //         stok: 'External',
-    //     });
-    // }
     await connection.commit();
     await connection.release();
 
@@ -179,211 +154,6 @@ const productsSalesretail = async (body) => {
     await connection.release();
   }
 };
-
-// const inputSalesretail = async (body) => {
-//   const connection = await dbPool.getConnection();
-//   const tanggal = date.format(new Date(), "YYYY-MM-DD HH:mm:ss");
-//   const tanggal_skrg = date.format(new Date(), "YYYY-MM-DD");
-//   try {
-//     const [cek_mutasi] = await connection.query(
-//       `SELECT MAX(id_mutasi) as id_mutasi FROM tb_mutasistock`
-//     );
-//     if (cek_mutasi[0].id_mutasi === null) {
-//       var id_mutasi = "MT-" + "00000001";
-//     } else {
-//       const get_last2 = cek_mutasi[0].id_mutasi;
-//       const data_2 = get_last2.toString().slice(-8);
-//       const hasil = parseInt(data_2) + 1;
-//       var id_mutasi = "MT-" + String(hasil).padStart(8, "0");
-//     }
-
-//     const [cek_invoice] = await connection.query(
-//       `SELECT MAX(id_invoice) as id_invoice FROM tb_invoice`
-//     );
-//     if (cek_invoice[0].id_invoice === null) {
-//       var id_invoice = "INV-" + "000000001";
-//     } else {
-//       const get_last2 = cek_invoice[0].id_invoice;
-//       const data_2 = get_last2.toString().slice(-9);
-//       const hasil = parseInt(data_2) + 1;
-//       var id_invoice = "INV-" + String(hasil).padStart(9, "0");
-//     }
-
-//     const [get_store] = await connection.query(
-//       `SELECT * FROM tb_store WHERE id_store='${body.id_store}'`
-//     );
-//     var data = body.data;
-
-//     await connection.beginTransaction();
-
-//     for (let index = 0; index < data.length; index++) {
-
-//       if (body.status_display === 'display_true') {
-//         await connection.query(
-//           `DELETE FROM displays WHERE id_produk='${data[index].idproduk}' AND id_ware='${data[index].id_ware}'`
-//         );
-//       }
-
-//       var [get_produk] = await connection.query(
-//         `SELECT * FROM tb_produk WHERE id_produk='${data[index].idproduk}' AND id_ware='${data[index].id_ware}'`
-//       );
-
-//       var [get_var] = await connection.query(
-//         `SELECT * FROM tb_variation WHERE id_produk='${data[index].idproduk}' AND id_ware='${data[index].id_ware}' AND size='${data[index].size}' AND qty > '0' ORDER BY id ASC`
-//       );
-
-//       var qty_sales = data[index].qty;
-
-//       for (let b = 0; b < get_var.length; b++) {
-//         var get_qty = get_var[b].qty;
-//         var qty_baru = parseInt(get_qty) - parseInt(qty_sales);
-
-
-//         var [get_modal] = await connection.query(
-//           `SELECT m_price FROM tb_purchaseorder WHERE idpo='${get_var[b].idpo}' AND id_produk='${data[index].idproduk}'`
-//         );
-
-//         var [get_modal_area] = await connection.query(
-//           `SELECT tb_area.m_price FROM tb_area LEFT JOIN tb_warehouse ON tb_area.id_area = tb_warehouse.id_area WHERE tb_warehouse.id_ware='${data[index].id_ware}'`
-//         );
-
-//         if (qty_baru >= 0) {
-//           if (data[index].diskon_item === "") {
-//             var subtotal =
-//               parseInt(data[index].harga_jual) * parseInt(qty_sales);
-//           } else {
-//             var subtotal =
-//               parseInt(data[index].harga_jual) * parseInt(qty_sales) -
-//               parseInt(data[index].diskon_item) * parseInt(qty_sales);
-//           }
-
-//           await connection.query(
-//             `INSERT INTO tb_order
-//                             (tanggal_order, id_pesanan, id_store, id_produk, source, img, produk, id_brand, id_ware, idpo, quality, size, qty, m_price, selling_price, diskon_item, subtotal, users, created_at, updated_at)
-//                             VALUES ('${body.tanggal}','${id_invoice}','${body.id_store}','${data[index].idproduk}','Barang Gudang','${data[index].img}','${data[index].produk}','${get_produk[0].id_brand}','${data[index].id_ware}','${get_var[b].idpo}','${get_produk[0].quality}','${data[index].size}','${qty_sales}','${parseInt(get_modal[0].m_price) + parseInt(get_modal_area[0].m_price)}','${data[index].harga_jual}','${parseInt(data[index].diskon_item) * parseInt(qty_sales)}','${subtotal}','${body.kasir}','${tanggal}','${tanggal}')`
-//           );
-
-//           await connection.query(
-//             `INSERT INTO tb_mutasistock
-//                             (id_mutasi, tanggal, id_pesanan, id_ware, id_store, id_produk, produk, id_po, size, qty, source, id_sup, mutasi, users, created_at, updated_at)
-//                             VALUES ('${id_mutasi}','${body.tanggal}','${id_invoice}','${data[index].id_ware}','${body.id_store}','${data[index].idproduk}','${data[index].produk}','${get_var[b].idpo}','${data[index].size}','${qty_sales}','Barang Gudang','-','SALES RETAIL','${body.kasir}','${tanggal}','${tanggal}')`
-//           );
-
-//           await connection.query(
-//             `UPDATE tb_variation SET qty='${qty_baru}',updated_at='${tanggal}' WHERE id_produk='${data[index].idproduk}' AND id_ware='${data[index].id_ware}' AND size='${data[index].size}' AND idpo='${get_var[b].idpo}'`
-//           );
-//           break;
-//         } else {
-//           if (qty_baru < 0) {
-//             var qty_sisa = 0;
-//           }
-//           if (data[index].diskon_item === "") {
-//             var subtotal =
-//               parseInt(data[index].harga_jual) * parseInt(get_var[b].qty);
-//           } else {
-//             var subtotal =
-//               parseInt(data[index].harga_jual) * parseInt(get_var[b].qty) -
-//               parseInt(data[index].diskon_item) * parseInt(get_var[b].qty);
-//           }
-
-//           await connection.query(
-//             `INSERT INTO tb_order
-//                             (tanggal_order, id_pesanan, id_store, id_produk, source, img, produk, id_brand, id_ware, idpo, quality, size, qty, m_price, selling_price, diskon_item, subtotal, users, created_at, updated_at)
-//                             VALUES ('${body.tanggal}','${id_invoice}','${body.id_store}','${data[index].idproduk}','Barang Gudang','${data[index].img}','${data[index].produk}','${get_produk[0].id_brand}','${data[index].id_ware}','${get_var[b].idpo}','${get_produk[0].quality}','${data[index].size}','${get_var[b].qty}','${parseInt(get_modal[0].m_price) + parseInt(get_modal_area[0].m_price)}','${data[index].harga_jual}','${parseInt(data[index].diskon_item) * parseInt(qty_sales)}','${subtotal}','${body.kasir}','${tanggal}','${tanggal}')`
-//           );
-
-//           await connection.query(
-//             `INSERT INTO tb_mutasistock
-//                             (id_mutasi, tanggal, id_pesanan, id_ware, id_store, id_produk, produk, id_po, size, qty, source, id_sup, mutasi, users, created_at, updated_at)
-//                             VALUES ('${id_mutasi}','${body.tanggal}','${id_invoice}','${data[index].id_ware}','${body.id_store}','${data[index].idproduk}','${data[index].produk}','${get_var[b].idpo}','${data[index].size}','${get_var[b].qty}','Barang Gudang','-','SALES RETAIL','${body.kasir}','${tanggal}','${tanggal}')`
-//           );
-
-//           await connection.query(
-//             `UPDATE tb_variation SET qty='${qty_sisa}',updated_at='${tanggal}' WHERE id_produk='${data[index].idproduk}' AND id_ware='${data[index].id_ware}' AND size='${data[index].size}' AND idpo='${get_var[b].idpo}'`
-//           );
-
-//           qty_sales = parseInt(qty_sales) - parseInt(get_var[b].qty);
-//         }
-//       }
-//     }
-
-//     if (body.customer != "Retail") {
-//       await connection.query(
-//         `INSERT INTO tb_invoice
-//                 (tanggal_order, id_invoice, id_pesanan, customer, type_customer, sales_channel, amount, diskon_nota, biaya_lainnya, total_amount, selisih, status_pesanan, payment, reseller, users, created_at, updated_at)
-//                 VALUES ('${body.tanggal}','${id_invoice}','${id_invoice}','${get_store[0].id_store}','${body.customer}','${get_store[0].channel}','${body.total_amount}','${body.diskon_nota}','${body.biayalain}','${body.total_amount}','0','SELESAI','${body.payment_method}','${body.reseller}','${body.kasir}','${tanggal}','${tanggal}')`
-//       );
-//     } else {
-//       await connection.query(
-//         `INSERT INTO tb_invoice
-//                 (tanggal_order, id_invoice, id_pesanan, customer, type_customer, sales_channel, amount, diskon_nota, biaya_lainnya, total_amount, selisih, status_pesanan, payment, reseller, users, created_at, updated_at)
-//                 VALUES ('${body.tanggal}','${id_invoice}','${id_invoice}','${get_store[0].id_store}','${body.customer}','${get_store[0].channel}','${body.total_amount}','${body.diskon_nota}','${body.biayalain}','${body.total_amount}','0','SELESAI','${body.payment_method}','-','${body.kasir}','${tanggal}','${tanggal}')`
-//       );
-//     }
-
-//     if (body.payment_method === "PAID") {
-//       if (body.cash != 0) {
-//         await connection.query(
-//           `INSERT INTO tb_payment
-//                 (tanggal_pembayaran, id_invoice, total_payment, metode_payment, bank, id_store, id_area, deskripsi, created_at, updated_at)
-//                 VALUES ('${tanggal_skrg}','${id_invoice}','${body.cash}','CASH','CASH','${get_store[0].id_store}','${get_store[0].id_area}','-','${tanggal}','${tanggal}')`
-//         );
-//       }
-
-//       if (body.bca != 0) {
-//         await connection.query(
-//           `INSERT INTO tb_payment
-//                   (tanggal_pembayaran, id_invoice, total_payment, metode_payment, bank, id_store, id_area, deskripsi, created_at, updated_at)
-//                   VALUES ('${tanggal_skrg}','${id_invoice}','${body.bca}','DEBIT','DEBIT','${get_store[0].id_store}','${get_store[0].id_area}','-','${tanggal}','${tanggal}')`
-//         );
-//       }
-
-//       if (body.qris != 0) {
-//         await connection.query(
-//           `INSERT INTO tb_payment
-//                   (tanggal_pembayaran, id_invoice, total_payment, metode_payment, bank, id_store, id_area, deskripsi, created_at, updated_at)
-//                   VALUES ('${tanggal_skrg}','${id_invoice}','${body.qris}','TRANSFER','QRIS','${get_store[0].id_store}','${get_store[0].id_area}','-','${tanggal}','${tanggal}')`
-//         );
-//       }
-//     }
-
-//     const datas = [];
-
-//     const [print_store] = await connection.query(
-//       `SELECT tb_order.id_store,tb_store.* FROM tb_order LEFT JOIN tb_store ON tb_order.id_store = tb_store.id_store WHERE tb_order.id_pesanan='${id_invoice}'`
-//     );
-
-//     const [print_detail] = await connection.query(
-//       `SELECT tb_invoice.*,SUM(subtotal) as subtotal,tb_order.*,SUM(qty) as qty FROM tb_invoice LEFT JOIN tb_order ON tb_invoice.id_pesanan = tb_order.id_pesanan WHERE tb_invoice.id_pesanan='${id_invoice}' GROUP BY tb_invoice.id_pesanan,tb_order.id_produk,tb_order.size`
-//     );
-
-//     const [print_amount] = await connection.query(
-//       `SELECT *,SUM(qty) as qty FROM tb_order WHERE id_pesanan='${id_invoice}'`
-//     );
-
-//     const [print_grandtotal] = await connection.query(
-//       `SELECT *,SUM(qty) as qty FROM tb_order WHERE id_pesanan='${id_invoice}' GROUP BY id_pesanan`
-//     );
-
-//     datas.push({
-//       print_detail: print_detail,
-//       print_amount: print_amount,
-//       print_grandtotal: print_grandtotal,
-//       print_store: print_store,
-//       id_invoice,
-//       // timestamp: tanggal,
-//     });
-
-//     await connection.commit();
-//     await connection.release();
-
-//     return datas;
-
-//   } catch (error) {
-//     console.log(error);
-//     await connection.release();
-//   }
-// };
 
 const inputSalesretail = async (body) => {
   const connection = await dbPool.getConnection();
@@ -595,683 +365,248 @@ const inputSalesretail = async (body) => {
 
 const orderresellerpaid = async (body) => {
   const connection = await dbPool.getConnection();
-  const tanggal_skrg = date.format(new Date(), "YYYY-MM-DD");
-  var status = body.status_pesanan;
-  var query = body.query;
-  var store = body.store;
-  var tipe_sales = body.tipe_sales;
-
-  const tanggal = body.date;
-  const myArray = tanggal.split(" to ");
-
-  if (tanggal.length > 10) {
-    var tanggal_start = myArray[0];
-    var tanggal_end = myArray[1];
-  } else {
-    var tanggal_start = tanggal;
-    var tanggal_end = tanggal;
-  }
-
-  const datas = [];
 
   try {
-    await connection.beginTransaction();
+    const {
+      status_pesanan,
+      query,
+      store,
+      date,
+      area,
+      tipe_sales,
+    } = body;
 
-    if (store === "all") {
-      if (query === "all") {
-        if (tipe_sales === "all") {
-          var [get_orders] = await connection.query(
-            `SELECT id,tanggal_order,type_customer,created_at,id_pesanan,users FROM tb_invoice WHERE (type_customer='Reseller' OR type_customer='Grosir' OR type_customer='Retail') AND status_pesanan='${status}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-          );
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.selling_price) as omzet,SUM(tb_order.diskon_item) as total_diskon FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND tb_invoice.status_pesanan='${status}'  AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [payment_cash] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) as cash FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice WHERE tb_invoice.status_pesanan='${status}' AND tb_payment.bank='CASH' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [payment_bca] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) as bca FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice WHERE tb_invoice.status_pesanan='${status}' AND tb_payment.bank='DEBIT' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-        } else {
-          var [get_orders] = await connection.query(
-            `SELECT id,tanggal_order,type_customer,created_at,id_pesanan,users FROM tb_invoice WHERE (type_customer='Reseller' OR type_customer='Grosir' OR type_customer='Retail') AND type_customer='${tipe_sales}' AND status_pesanan='${status}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-          );
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.selling_price) as omzet,SUM(tb_order.diskon_item) as total_diskon FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND tb_invoice.type_customer='${tipe_sales}' AND tb_invoice.status_pesanan='${status}'  AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [payment_cash] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) as cash FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice WHERE tb_invoice.status_pesanan='${status}' AND tb_invoice.type_customer='${tipe_sales}' AND tb_payment.bank='CASH' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [payment_bca] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) as bca FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice WHERE tb_invoice.status_pesanan='${status}' AND tb_invoice.type_customer='${tipe_sales}' AND tb_payment.bank='DEBIT' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-        }
-      } else {
-        if (tipe_sales === "all") {
-          var [get_orders] = await connection.query(
-            `SELECT tb_invoice.id,tb_invoice.tanggal_order,tb_invoice.type_customer,tb_invoice.created_at,tb_invoice.id_pesanan,tb_invoice.users FROM tb_invoice LEFT JOIN tb_order ON tb_invoice.id_pesanan = tb_order.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_invoice.status_pesanan='${status}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' GROUP BY tb_invoice.id_pesanan`
-          );
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.selling_price) as omzet,SUM(tb_order.diskon_item) as total_diskon FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_invoice.status_pesanan='${status}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [payment_cash] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) AS cash FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice LEFT JOIN (SELECT id_pesanan, produk, id_produk, size FROM tb_order GROUP BY id_pesanan) AS tb_order ON tb_order.id_pesanan = tb_invoice.id_invoice WHERE tb_invoice.status_pesanan='${status}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_payment.bank='CASH' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}' GROUP BY tb_payment.bank, tb_payment.id_invoice`
-          );
-          var [payment_bca] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) AS bca FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice LEFT JOIN (SELECT id_pesanan, produk, id_produk, size FROM tb_order GROUP BY id_pesanan) AS tb_order ON tb_order.id_pesanan = tb_invoice.id_invoice WHERE tb_invoice.status_pesanan='${status}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_payment.bank='DEBIT' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}' GROUP BY tb_payment.bank, tb_payment.id_invoice`
-          );
-        } else {
-          var [get_orders] = await connection.query(
-            `SELECT tb_invoice.id,tb_invoice.tanggal_order,tb_invoice.type_customer,tb_invoice.created_at,tb_invoice.id_pesanan,tb_invoice.users FROM tb_invoice LEFT JOIN tb_order ON tb_invoice.id_pesanan = tb_order.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_invoice.type_customer='${tipe_sales}' AND tb_invoice.status_pesanan='${status}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' GROUP BY tb_invoice.id_pesanan`
-          );
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.selling_price) as omzet,SUM(tb_order.diskon_item) as total_diskon FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_invoice.type_customer='${tipe_sales}' AND tb_invoice.status_pesanan='${status}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [payment_cash] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) AS cash FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice LEFT JOIN (SELECT id_pesanan, produk, id_produk, size FROM tb_order GROUP BY id_pesanan) AS tb_order ON tb_order.id_pesanan = tb_invoice.id_invoice WHERE tb_invoice.status_pesanan='${status}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_invoice.type_customer='${tipe_sales}' AND tb_payment.bank='CASH' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}' GROUP BY tb_payment.bank, tb_payment.id_invoice`
-          );
-          var [payment_bca] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) AS bca FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice LEFT JOIN (SELECT id_pesanan, produk, id_produk, size FROM tb_order GROUP BY id_pesanan) AS tb_order ON tb_order.id_pesanan = tb_invoice.id_invoice WHERE tb_invoice.status_pesanan='${status}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_invoice.type_customer='${tipe_sales}' AND tb_payment.bank='DEBIT' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}' GROUP BY tb_payment.bank, tb_payment.id_invoice`
-          );
-        }
-      }
-    } else if (store === "all_area") {
-      if (query === "all") {
-        if (tipe_sales === "all") {
-          var [get_orders] = await connection.query(
-            `SELECT tb_invoice.id,tb_invoice.tanggal_order,tb_invoice.type_customer,tb_invoice.created_at,tb_invoice.id_pesanan,tb_invoice.users FROM tb_invoice LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND tb_store.id_area='${body.area}' AND tb_invoice.status_pesanan='${status}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-          );
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.selling_price) as omzet,SUM(tb_order.m_price*tb_order.qty) as total_modal FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_area WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND tb_store.id_area='${body.area}' AND tb_invoice.status_pesanan='${status}'  AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [payment_cash] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) as cash FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.status_pesanan='${status}' AND tb_store.id_area='${body.area}' AND tb_payment.bank='CASH' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [payment_bca] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) as bca FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.status_pesanan='${status}' AND tb_store.id_area='${body.area}' AND tb_payment.bank='DEBIT' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-        } else {
-          var [get_orders] = await connection.query(
-            `SELECT tb_invoice.id,tb_invoice.tanggal_order,tb_invoice.type_customer,tb_invoice.created_at,tb_invoice.id_pesanan,tb_invoice.users FROM tb_invoice LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND tb_invoice.type_customer='${tipe_sales}' AND tb_store.id_area='${body.area}' AND tb_invoice.status_pesanan='${status}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-          );
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.selling_price) as omzet,SUM(tb_order.diskon_item) as total_diskon FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_area WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND tb_invoice.type_customer='${tipe_sales}' AND tb_store.id_area='${body.area}' AND tb_invoice.status_pesanan='${status}'  AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [payment_cash] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) as cash FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.status_pesanan='${status}' AND tb_store.id_area='${body.area}' AND tb_invoice.type_customer='${tipe_sales}' AND tb_payment.bank='CASH' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [payment_bca] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) as bca FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.status_pesanan='${status}' AND tb_store.id_area='${body.area}' AND tb_invoice.type_customer='${tipe_sales}' AND tb_payment.bank='DEBIT' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-        }
-      } else {
-        if (tipe_sales === "all") {
-          var [get_orders] = await connection.query(
-            `SELECT tb_invoice.id,tb_invoice.tanggal_order,tb_invoice.type_customer,tb_invoice.created_at,tb_invoice.id_pesanan,tb_invoice.users FROM tb_invoice LEFT JOIN tb_order ON tb_invoice.id_pesanan = tb_order.id_pesanan LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_store.id_area='${body.area}' AND tb_invoice.status_pesanan='${status}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' GROUP BY tb_invoice.id_pesanan`
-          );
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.selling_price) as omzet,SUM(tb_order.diskon_item) as total_diskon FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_area WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_store.id_area='${body.area}' AND tb_invoice.status_pesanan='${status}'  AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [payment_cash] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) AS cash FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice LEFT JOIN (SELECT id_pesanan, produk, id_produk, size FROM tb_order GROUP BY id_pesanan) AS tb_order ON tb_order.id_pesanan = tb_invoice.id_invoice LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.status_pesanan='${status}' AND tb_store.id_area='${body.area}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_payment.bank='CASH' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}' GROUP BY tb_payment.bank, tb_payment.id_invoice`
-          );
-          var [payment_bca] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) AS bca FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice LEFT JOIN (SELECT id_pesanan, produk, id_produk, size FROM tb_order GROUP BY id_pesanan) AS tb_order ON tb_order.id_pesanan = tb_invoice.id_invoice LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.status_pesanan='${status}' AND tb_store.id_area='${body.area}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_payment.bank='DEBIT' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}' GROUP BY tb_payment.bank, tb_payment.id_invoice`
-          );
-        } else {
-          var [get_orders] = await connection.query(
-            `SELECT tb_invoice.id,tb_invoice.tanggal_order,tb_invoice.type_customer,tb_invoice.created_at,tb_invoice.id_pesanan,tb_invoice.users FROM tb_invoice LEFT JOIN tb_order ON tb_invoice.id_pesanan = tb_order.id_pesanan LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_invoice.type_customer='${tipe_sales}' AND tb_store.id_area='${body.area}' AND tb_invoice.status_pesanan='${status}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' GROUP BY tb_invoice.id_pesanan`
-          );
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.selling_price) as omzet,SUM(tb_order.diskon_item) as total_diskon FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_area WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_invoice.type_customer='${tipe_sales}' AND tb_store.id_area='${body.area}' AND tb_invoice.status_pesanan='${status}'  AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [payment_cash] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) AS cash FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice LEFT JOIN (SELECT id_pesanan, produk, id_produk, size FROM tb_order GROUP BY id_pesanan) AS tb_order ON tb_order.id_pesanan = tb_invoice.id_invoice LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.status_pesanan='${status}' AND tb_store.id_area='${body.area}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_invoice.type_customer='${tipe_sales}' AND tb_payment.bank='CASH' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}' GROUP BY tb_payment.bank, tb_payment.id_invoice`
-          );
-          var [payment_bca] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) AS bca FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice LEFT JOIN (SELECT id_pesanan, produk, id_produk, size FROM tb_order GROUP BY id_pesanan) AS tb_order ON tb_order.id_pesanan = tb_invoice.id_invoice LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.status_pesanan='${status}' AND tb_store.id_area='${body.area}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_invoice.type_customer='${tipe_sales}' AND tb_payment.bank='DEBIT' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}' GROUP BY tb_payment.bank, tb_payment.id_invoice`
-          );
-        }
-      }
+    const formatPayment = "PAID";
+
+    const [tanggal_start, tanggal_end] =
+      date.includes(" to ") ? date.split(" to ") : [date, date];
+
+    const where = [];
+    const params = [];
+
+    // status
+    where.push(`inv.status_pesanan = ?`);
+    params.push(status_pesanan);
+
+    // payment (FIX)
+    where.push(`inv.payment = ?`);
+    params.push(formatPayment);
+
+    // tanggal
+    where.push(`inv.tanggal_order BETWEEN ? AND ?`);
+    params.push(tanggal_start, tanggal_end);
+
+    // tipe sales
+    if (tipe_sales !== "all") {
+      where.push(`inv.type_customer = ?`);
+      params.push(tipe_sales);
     } else {
-      if (query === "all") {
-        if (tipe_sales === "all") {
-          var [get_orders] = await connection.query(
-            `SELECT id,tanggal_order,type_customer,created_at,id_pesanan,users FROM tb_invoice WHERE (type_customer='Reseller' OR type_customer='Grosir' OR type_customer='Retail') AND customer='${store}' AND status_pesanan='${status}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-          );
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.selling_price) as omzet,SUM(tb_order.diskon_item) as total_diskon FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND tb_invoice.customer='${store}' AND tb_invoice.status_pesanan='${status}'  AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [payment_cash] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) as cash FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.status_pesanan='${status}' AND tb_invoice.customer='${store}' AND tb_payment.bank='CASH' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [payment_bca] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) as bca FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.status_pesanan='${status}' AND tb_invoice.customer='${store}' AND tb_payment.bank='DEBIT' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-        } else {
-          var [get_orders] = await connection.query(
-            `SELECT id,tanggal_order,type_customer,created_at,id_pesanan,users FROM tb_invoice WHERE (type_customer='Reseller' OR type_customer='Grosir' OR type_customer='Retail') AND customer='${store}' AND tb_invoice.type_customer='${tipe_sales}' AND status_pesanan='${status}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-          );
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.selling_price) as omzet,SUM(tb_order.diskon_item) as total_diskon FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND tb_invoice.type_customer='${tipe_sales}' AND tb_invoice.customer='${store}' AND tb_invoice.status_pesanan='${status}'  AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [payment_cash] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) as cash FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.status_pesanan='${status}' AND tb_invoice.customer='${store}' AND tb_invoice.type_customer='${tipe_sales}' AND tb_payment.bank='CASH' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [payment_bca] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) as bca FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.status_pesanan='${status}' AND tb_invoice.customer='${store}' AND tb_invoice.type_customer='${tipe_sales}' AND tb_payment.bank='DEBIT' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-        }
-      } else {
-        if (tipe_sales === "all") {
-          var [get_orders] = await connection.query(
-            `SELECT tb_invoice.id,tb_invoice.tanggal_order,tb_invoice.type_customer,tb_invoice.created_at,tb_invoice.id_pesanan,tb_invoice.users FROM tb_invoice LEFT JOIN tb_order ON tb_invoice.id_pesanan = tb_order.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_invoice.customer='${store}' AND tb_invoice.status_pesanan='${status}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' GROUP BY tb_invoice.id_pesanan`
-          );
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.selling_price) as omzet,SUM(tb_order.diskon_item) as total_diskon FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_invoice.customer='${store}' AND tb_invoice.status_pesanan='${status}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [payment_cash] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) AS cash FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice LEFT JOIN (SELECT id_pesanan, produk, id_produk, size FROM tb_order GROUP BY id_pesanan) AS tb_order ON tb_order.id_pesanan = tb_invoice.id_invoice WHERE tb_invoice.status_pesanan='${status}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_invoice.customer='${store}' AND tb_payment.bank='CASH' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}' GROUP BY tb_payment.bank, tb_payment.id_invoice`
-          );
-          var [payment_bca] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) AS bca FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice LEFT JOIN (SELECT id_pesanan, produk, id_produk, size FROM tb_order GROUP BY id_pesanan) AS tb_order ON tb_order.id_pesanan = tb_invoice.id_invoice WHERE tb_invoice.status_pesanan='${status}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_invoice.customer='${store}' AND tb_payment.bank='DEBIT' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}' GROUP BY tb_payment.bank, tb_payment.id_invoice`
-          );
-        } else {
-          var [get_orders] = await connection.query(
-            `SELECT tb_invoice.id,tb_invoice.tanggal_order,tb_invoice.type_customer,tb_invoice.created_at,tb_invoice.id_pesanan,tb_invoice.users FROM tb_invoice LEFT JOIN tb_order ON tb_invoice.id_pesanan = tb_order.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_invoice.type_customer='${tipe_sales}' AND tb_invoice.customer='${store}' AND tb_invoice.status_pesanan='${status}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' GROUP BY tb_invoice.id_pesanan`
-          );
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.selling_price) as omzet,SUM(tb_order.diskon_item) as total_diskon FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_invoice.type_customer='${tipe_sales}' AND tb_invoice.customer='${store}' AND tb_invoice.status_pesanan='${status}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [payment_cash] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) AS cash FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice LEFT JOIN (SELECT id_pesanan, produk, id_produk, size FROM tb_order GROUP BY id_pesanan) AS tb_order ON tb_order.id_pesanan = tb_invoice.id_invoice WHERE tb_invoice.status_pesanan='${status}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_invoice.customer='${store}' AND tb_invoice.type_customer='${tipe_sales}' AND tb_payment.bank='CASH' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}' GROUP BY tb_payment.bank, tb_payment.id_invoice`
-          );
-          var [payment_bca] = await connection.query(
-            `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(tb_payment.total_payment) AS bca FROM tb_payment LEFT JOIN tb_invoice ON tb_payment.id_invoice = tb_invoice.id_invoice LEFT JOIN (SELECT id_pesanan, produk, id_produk, size FROM tb_order GROUP BY id_pesanan) AS tb_order ON tb_order.id_pesanan = tb_invoice.id_invoice WHERE tb_invoice.status_pesanan='${status}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR CONCAT(tb_order.id_produk,'.', tb_order.size) LIKE '%${query}%' OR CONCAT(tb_order.produk,'.', tb_order.size) LIKE '%${query}%') AND tb_invoice.customer='${store}' AND tb_invoice.type_customer='${tipe_sales}' AND tb_payment.bank='DEBIT' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}' GROUP BY tb_payment.bank, tb_payment.id_invoice`
-          );
-        }
+      where.push(`inv.type_customer IN ('Reseller','Grosir','Retail')`);
+    }
+
+    // store / area
+    if (store === "all_area") {
+      where.push(`st.id_area = ?`);
+      params.push(area);
+    } else if (store !== "all") {
+      where.push(`inv.customer = ?`);
+      params.push(store);
+    }
+
+    // search
+    if (query !== "all") {
+      where.push(`
+        (
+          inv.id_pesanan LIKE ?
+          OR inv.reseller LIKE ?
+          OR ord.produk LIKE ?
+          OR ord.id_produk LIKE ?
+          OR CONCAT(ord.id_produk,'.',ord.size) LIKE ?
+          OR CONCAT(ord.produk,'.',ord.size) LIKE ?
+        )
+      `);
+      params.push(
+        `%${query}%`,
+        `%${query}%`,
+        `%${query}%`,
+        `%${query}%`,
+        `%${query}%`,
+        `%${query}%`
+      );
+    }
+
+    // ===== ORDERS =====
+    const [orders] = await connection.query(
+      `
+      SELECT
+        inv.id,
+        inv.id_pesanan,
+        inv.tanggal_order,
+        inv.type_customer,
+        inv.created_at,
+        inv.users,
+        st.store,
+        st.address,
+        inv.reseller,
+        inv.selisih
+      FROM tb_invoice inv
+      LEFT JOIN tb_order ord ON ord.id_pesanan = inv.id_pesanan
+      LEFT JOIN tb_store st ON inv.customer = st.id_store
+      WHERE ${where.join(" AND ")}
+      GROUP BY inv.id_pesanan
+      ORDER BY inv.id DESC
+      `,
+      params
+    );
+
+    // ===== HEADER =====
+    const [header] = await connection.query(
+      `
+      SELECT
+        COUNT(DISTINCT inv.id_pesanan) as countsales,
+        SUM(ord.qty) as totalqty,
+        SUM(ord.subtotal) as omzet,
+        SUM(ord.m_price * ord.qty) as total_modal,
+        SUM(ord.diskon_item) as total_diskon
+      FROM tb_invoice inv
+      LEFT JOIN tb_order ord ON ord.id_pesanan = inv.id_pesanan
+      LEFT JOIN tb_store st ON inv.customer = st.id_store
+      WHERE ${where.join(" AND ")}
+      `,
+      params
+    );
+
+    // ===== PAYMENT =====
+    const [payments] = await connection.query(
+      `
+      SELECT pay.bank, SUM(pay.total_payment) as total
+      FROM tb_payment pay
+      LEFT JOIN tb_invoice inv ON pay.id_invoice = inv.id_pesanan
+      LEFT JOIN tb_store st ON inv.customer = st.id_store
+      WHERE
+        inv.status_pesanan = ?
+        AND inv.tanggal_order BETWEEN ? AND ?
+        ${tipe_sales !== "all" ? "AND inv.type_customer = ?" : ""}
+        ${store === "all_area" ? "AND st.id_area = ?" : ""}
+        ${store !== "all" && store !== "all_area" ? "AND inv.customer = ?" : ""}
+      GROUP BY pay.bank
+      `,
+      params.filter(p => p !== `%${query}%`) // ← penting
+    );
+
+    let total_cash = 0;
+    let total_bca = 0;
+
+    payments.forEach(p => {
+      if (p.bank === "CASH") total_cash = Number(p.total || 0);
+      if (p.bank === "DEBIT") total_bca = Number(p.total || 0);
+    });
+
+    // ===== DETAILS =====
+    const ids = orders.map(o => o.id_pesanan);
+
+    const [details] = ids.length
+      ? await connection.query(
+        `
+          SELECT
+            ord.*,
+            SUM(ord.qty) as qty,
+            SUM(ord.subtotal) as subtotal,
+            SUM(ord.m_price * ord.qty) as modal
+          FROM tb_order ord
+          WHERE ord.id_pesanan IN (?)
+          GROUP BY ord.id_pesanan, ord.id_produk, ord.size
+          `,
+        [ids]
+      )
+      : [[]];
+
+    const detailMap = {};
+    details.forEach(d => {
+      if (!detailMap[d.id_pesanan]) detailMap[d.id_pesanan] = [];
+      detailMap[d.id_pesanan].push(d);
+    });
+
+    const [paymentDetails] = ids.length
+      ? await connection.query(
+        `
+      SELECT
+        id_invoice,
+        bank,
+        SUM(total_payment) as total_payment
+      FROM tb_payment
+      WHERE id_invoice IN (?)
+      GROUP BY id_invoice, bank
+      `,
+        [ids]
+      )
+      : [[]];
+
+    const paymentMap = {};
+    paymentDetails.forEach(p => {
+      if (!paymentMap[p.id_invoice]) {
+        paymentMap[p.id_invoice] = [];
       }
-    }
-    // order
-    for (let i = 0; i < get_orders.length; i++) {
-      var [details_order] = await connection.query(
-        `SELECT tb_order.id,tb_order.id_pesanan,tb_order.id_produk,tb_order.source,tb_order.img,tb_order.id_ware,tb_order.idpo,tb_order.produk,tb_order.size,tb_order.qty,tb_order.m_price,tb_order.selling_price,tb_order.diskon_item,tb_order.subtotal,SUM(tb_order.qty) as qty,SUM(tb_order.m_price*tb_order.qty) as total_m_price,SUM(tb_order.subtotal) as subtotal,SUM(tb_order.m_price*tb_order.qty) as modalsatuan,tb_store.store,tb_store.address,tb_invoice.selisih,tb_invoice.reseller FROM tb_order LEFT JOIN tb_invoice ON tb_invoice.id_pesanan = tb_order.id_pesanan LEFT JOIN tb_store ON tb_store.id_store = tb_order.id_store WHERE tb_invoice.id_pesanan='${get_orders[i].id_pesanan}' GROUP BY tb_order.size,tb_order.id_produk,tb_invoice.id_pesanan`
-      );
-      var [totaltotal] = await connection.query(
-        `SELECT SUM(tb_order.m_price*tb_order.qty) as modalsatuan,SUM(tb_order.subtotal) as subtotalakhir,SUM(tb_invoice.total_amount) as totalakhir,SUM(tb_order.diskon_item) as total_diskon,SUM(tb_order.qty) as hasilqty,tb_invoice.selisih FROM tb_order LEFT JOIN tb_invoice ON tb_invoice.id_pesanan = tb_order.id_pesanan WHERE tb_invoice.id_pesanan='${get_orders[i].id_pesanan}' GROUP BY tb_invoice.id_pesanan`
-      );
-      var [total_payment] = await connection.query(
-        `SELECT amount FROM tb_invoice WHERE id_pesanan='${get_orders[i].id_pesanan}'`
+      paymentMap[p.id_invoice].push(p);
+    });
+
+    const datas = orders.map(o => {
+      const details = detailMap[o.id_pesanan] || [];
+      const payments = paymentMap[o.id_pesanan] || [];
+
+      const modalakhir = details.reduce(
+        (sum, d) => sum + Number(d.modal || 0),
+        0
       );
 
-      var [cash] = await connection.query(
-        `SELECT bank,id_invoice,SUM(total_payment) as cash FROM tb_payment WHERE bank='CASH' AND id_invoice='${get_orders[i].id_pesanan}'`
+      const subtotalakhir = details.reduce(
+        (sum, d) => sum + Number(d.subtotal || 0),
+        0
       );
-      var [bca] = await connection.query(
-        `SELECT bank,id_invoice,SUM(total_payment) as bca FROM tb_payment WHERE bank='DEBIT' AND id_invoice='${get_orders[i].id_pesanan}'`
+
+      const total_diskon = details.reduce(
+        (sum, d) => sum + Number(d.diskon_item || 0),
+        0
       );
-      var [data_payment] = await connection.query(
-        `SELECT *,SUM(total_payment) as total_payment FROM tb_payment WHERE id_invoice='${get_orders[i].id_pesanan}' GROUP BY bank`
+
+      const subtotalstandar = payments.reduce(
+        (sum, p) => sum + Number(p.total_payment || 0),
+        0
       );
-      const modalakhir = totaltotal && totaltotal[0] ? totaltotal[0].modalsatuan : 0;
-      const subtotalakhir = totaltotal && totaltotal[0] ? totaltotal[0].subtotalakhir : 0;
-      const hasilqty = totaltotal && totaltotal[0] ? totaltotal[0].hasilqty : 0;
-      const total_diskon = totaltotal && totaltotal[0] ? totaltotal[0].total_diskon : 0;
 
-      const store = details_order && details_order[0] ? details_order[0].store : 0;
-      const selisih = details_order && details_order[0] ? details_order[0].selisih : 0;
-      const address = details_order && details_order[0] ? details_order[0].address : 0;
-      const reseller = details_order && details_order[0] ? details_order[0].reseller : 0;
-
-      datas.push({
-        id: get_orders[i].id,
-        tanggal_order: get_orders[i].tanggal_order,
-        type_customer: get_orders[i].type_customer,
-        created_at: get_orders[i].created_at,
-        id_pesanan: get_orders[i].id_pesanan,
-        users: get_orders[i].users,
-        modalakhir: modalakhir,
-        subtotalakhir: subtotalakhir,
-        subtotalstandar: total_payment[0].amount,
-        qty: hasilqty,
-        store: store,
-        selisih: selisih,
-        address: address,
-        reseller: reseller,
-        details_order: details_order,
-        total_diskon: total_diskon,
-        bca: bca[0].bca ? bca[0].bca : 0,
-        cash: cash[0].cash ? cash[0].cash : 0,
-        data_payment: data_payment,
-      });
-    }
-    // end order
-
-    var total_bca = 0;
-    for (let cek_bca = 0; cek_bca < payment_bca.length; cek_bca++) {
-      total_bca = parseInt(total_bca) + parseInt(payment_bca[cek_bca].bca);
-    }
-    var total_cash = 0;
-    for (let cek_cash = 0; cek_cash < payment_cash.length; cek_cash++) {
-      total_cash = parseInt(total_cash) + parseInt(payment_cash[cek_cash].cash);
-    }
+      return {
+        ...o,
+        modalakhir,
+        subtotalakhir,
+        subtotalstandar,
+        total_diskon,
+        details_order: details,
+        data_payment: payments
+      };
+    });
 
     await connection.commit();
     await connection.release();
 
     return {
       datas,
-      selesai: get_orders.length,
-      sales: get_orders.length,
-      qty_sales: Math.round(header[0].totalqty ? header[0].totalqty : 0),
-      omzet: Math.round(header[0].omzet ? header[0].omzet : 0),
-      modal: Math.round(header[0].total_modal ? header[0].total_modal : 0),
-      total_diskon: Math.round(header[0].total_diskon ? header[0].total_diskon : 0),
-      net_sales: parseInt(header[0].omzet ? header[0].omzet : 0) - parseInt(header[0].total_diskon ? header[0].total_diskon : 0),
-      payment_cash: total_cash ? total_cash : 0,
-      payment_bca: total_bca ? total_bca : 0,
+      selesai: orders.length,
+      sales: orders.length,
+      qty_sales: Math.round(header[0]?.totalqty || 0),
+      omzet: Math.round(header[0]?.omzet || 0),
+      modal: Math.round(header[0]?.total_modal || 0),
+      total_diskon: Math.round(header[0]?.total_diskon || 0),
+      net_sales:
+        Number(header[0]?.omzet || 0) -
+        Number(header[0]?.total_diskon || 0),
+      payment_cash: total_cash,
+      payment_bca: total_bca
     };
+
   } catch (error) {
-    console.log(error);
+    console.error(error);
     await connection.release();
-  }
-};
-
-const orderCountresellerpaid = async (body) => {
-  const connection = await dbPool.getConnection();
-  const tanggal_skrg = date.format(new Date(), "YYYY-MM-DD");
-
-  var store = body.store;
-  var query = body.query;
-  var tipesales = body.tipe_sales;
-
-  const tanggal = body.date;
-  const myArray = tanggal.split(" to ");
-
-  if (tanggal.length > 10) {
-    var tanggal_start = myArray[0];
-    var tanggal_end = myArray[1];
-  } else {
-    var tanggal_start = tanggal;
-    var tanggal_end = tanggal;
-  }
-  const datas = [];
-
-  try {
-    await connection.beginTransaction();
-
-    // if (store === "all") {
-    //   if (query === "all") {
-    //     if (tipesales === "all") {
-    //       var [dikirim] = await connection.query(
-    //         `SELECT * FROM tb_invoice WHERE (type_customer='Reseller' OR type_customer='Grosir' OR type_customer='Retail') AND payment='PAID' AND status_pesanan = 'SEDANG DIKIRIM' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-    //       );
-    //       var [selesai] = await connection.query(
-    //         `SELECT * FROM tb_invoice WHERE (type_customer='Reseller' OR type_customer='Grosir' OR type_customer='Retail') AND payment='PAID' AND status_pesanan = 'SELESAI' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-    //       );
-    //       var [cancel] = await connection.query(
-    //         `SELECT * FROM tb_invoice WHERE (type_customer='Reseller' OR type_customer='Grosir' OR type_customer='Retail') AND payment='PAID' AND status_pesanan = 'CANCEL' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-    //       );
-    //       var [cash] = await connection.query(
-    //         `SELECT bank,id_invoice,SUM(total_payment) as cash FROM tb_payment WHERE bank='CASH' AND tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //       var [bca] = await connection.query(
-    //         `SELECT bank,id_invoice,SUM(total_payment) as bca FROM tb_payment WHERE bank='DEBIT' AND tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //     } else {
-    //       var [dikirim] = await connection.query(
-    //         `SELECT * FROM tb_invoice WHERE (type_customer='Reseller' OR type_customer='Grosir' OR type_customer='Retail') AND payment='PAID' AND status_pesanan = 'SEDANG DIKIRIM' AND type_customer='${tipesales}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-    //       );
-    //       var [selesai] = await connection.query(
-    //         `SELECT * FROM tb_invoice WHERE (type_customer='Reseller' OR type_customer='Grosir' OR type_customer='Retail') AND payment='PAID' AND status_pesanan = 'SELESAI' AND type_customer='${tipesales}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-    //       );
-    //       var [cancel] = await connection.query(
-    //         `SELECT * FROM tb_invoice WHERE (type_customer='Reseller' OR type_customer='Grosir' OR type_customer='Retail') AND payment='PAID' AND status_pesanan = 'CANCEL' AND type_customer='${tipesales}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-    //       );
-    //       var [cash] = await connection.query(
-    //         `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(total_payment) as cash FROM tb_payment LEFT JOIN tb_invoice ON tb_invoice.id_invoice = tb_payment.id_invoice  WHERE tb_payment.bank='CASH' AND tb_payment.tanggal_pembayaran AND tb_invoice.type_customer='${tipesales}' BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //       var [bca] = await connection.query(
-    //         `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(total_payment) as bca FROM tb_payment LEFT JOIN tb_invoice ON tb_invoice.id_invoice = tb_payment.id_invoice WHERE tb_payment.bank='DEBIT' AND tb_payment.tanggal_pembayaran AND tb_invoice.type_customer='${tipesales}' BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //     }
-    //   } else {
-    //     if (tipesales === "all") {
-    //       var [dikirim] = await connection.query(
-    //         `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.status_pesanan = 'SEDANG DIKIRIM' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [selesai] = await connection.query(
-    //         `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.status_pesanan = 'SELESAI' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [cancel] = await connection.query(
-    //         `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.status_pesanan = 'CANCEL' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [cash] = await connection.query(
-    //         `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(total_payment) as cash FROM tb_payment LEFT JOIN tb_order ON tb_order.id_pesanan = tb_payment.id_invoice WHERE tb_payment.bank='CASH' AND tb_payment.tanggal_pembayaran AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //       var [bca] = await connection.query(
-    //         `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(total_payment) as bca FROM tb_payment LEFT JOIN tb_order ON tb_order.id_pesanan = tb_payment.id_invoice WHERE tb_payment.bank='DEBIT' AND tb_payment.tanggal_pembayaran AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //     } else {
-    //       var [dikirim] = await connection.query(
-    //         `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.status_pesanan = 'SEDANG DIKIRIM' AND tb_invoice.type_customer='${tipesales}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [selesai] = await connection.query(
-    //         `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.status_pesanan = 'SELESAI' AND tb_invoice.type_customer='${tipesales}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [cancel] = await connection.query(
-    //         `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.status_pesanan = 'CANCEL' AND tb_invoice.type_customer='${tipesales}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [cash] = await connection.query(
-    //         `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(total_payment) as cash FROM tb_payment LEFT JOIN tb_order ON tb_order.id_pesanan = tb_payment.id_invoice LEFT JOIN tb_invoice ON tb_invoice.id_invoice = tb_payment.id_invoice WHERE tb_payment.bank='CASH' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.type_customer='${tipesales}' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //       var [bca] = await connection.query(
-    //         `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(total_payment) as bca FROM tb_payment LEFT JOIN tb_order ON tb_order.id_pesanan = tb_payment.id_invoice LEFT JOIN tb_invoice ON tb_invoice.id_invoice = tb_payment.id_invoice WHERE tb_payment.bank='DEBIT' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.type_customer='${tipesales}' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //     }
-    //   }
-    // } else if (store === "all_area") {
-    //   if (query === "all") {
-    //     if (tipesales === "all") {
-    //       var [dikirim] = await connection.query(
-    //         `SELECT tb_invoice.*,tb_store.id_area FROM tb_invoice LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.payment='PAID' AND (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND tb_invoice.status_pesanan = 'SEDANG DIKIRIM' AND tb_store.id_area='${body.area}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [selesai] = await connection.query(
-    //         `SELECT tb_invoice.*,tb_store.id_area FROM tb_invoice LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.payment='PAID' AND (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND tb_invoice.status_pesanan = 'SELESAI' AND tb_store.id_area='${body.area}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [cancel] = await connection.query(
-    //         `SELECT tb_invoice.*,tb_store.id_area FROM tb_invoice LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.payment='PAID' AND (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND tb_invoice.status_pesanan = 'CANCEL' AND tb_store.id_area='${body.area}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [cash] = await connection.query(
-    //         `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(total_payment) as cash FROM tb_payment LEFT JOIN tb_store ON tb_store.id_store = tb_payment.id_store WHERE tb_payment.bank='CASH' AND tb_store.id_area='${body.area}' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //       var [bca] = await connection.query(
-    //         `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(total_payment) as bca FROM tb_payment LEFT JOIN tb_store ON tb_store.id_store = tb_payment.id_store WHERE tb_payment.bank='DEBIT' AND tb_store.id_area='${body.area}' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //     } else {
-    //       var [dikirim] = await connection.query(
-    //         `SELECT tb_invoice.*,tb_store.id_area FROM tb_invoice LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.payment='PAID' AND (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND tb_invoice.status_pesanan = 'SEDANG DIKIRIM' AND type_customer='${tipesales}' AND tb_store.id_area='${body.area}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [selesai] = await connection.query(
-    //         `SELECT tb_invoice.*,tb_store.id_area FROM tb_invoice LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.payment='PAID' AND (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND tb_invoice.status_pesanan = 'SELESAI' AND type_customer='${tipesales}' AND tb_store.id_area='${body.area}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [cancel] = await connection.query(
-    //         `SELECT tb_invoice.*,tb_store.id_area FROM tb_invoice LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.payment='PAID' AND (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND tb_invoice.status_pesanan = 'CANCEL' AND type_customer='${tipesales}' AND tb_store.id_area='${body.area}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [cash] = await connection.query(
-    //         `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(total_payment) as cash FROM tb_payment LEFT JOIN tb_invoice ON tb_invoice.id_invoice = tb_payment.id_invoice LEFT JOIN tb_store ON tb_store.id_store = tb_payment.id_store WHERE tb_payment.bank='CASH' AND tb_store.id_area='${body.area}' AND tb_invoice.type_customer='${tipesales}' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //       var [bca] = await connection.query(
-    //         `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(total_payment) as bca FROM tb_payment LEFT JOIN tb_invoice ON tb_invoice.id_invoice = tb_payment.id_invoice LEFT JOIN tb_store ON tb_store.id_store = tb_payment.id_store WHERE tb_payment.bank='DEBIT' AND tb_store.id_area='${body.area}' AND tb_invoice.type_customer='${tipesales}' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //     }
-    //   } else {
-    //     if (tipesales === "all") {
-    //       var [dikirim] = await connection.query(
-    //         `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_store.id_area='${body.area}' AND tb_invoice.status_pesanan = 'SEDANG DIKIRIM' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [selesai] = await connection.query(
-    //         `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_store.id_area='${body.area}' AND tb_invoice.status_pesanan = 'SELESAI' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [cancel] = await connection.query(
-    //         `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_store.id_area='${body.area}' AND tb_invoice.status_pesanan = 'CANCEL' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [cash] = await connection.query(
-    //         `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(total_payment) as cash FROM tb_payment LEFT JOIN tb_store ON tb_store.id_store = tb_payment.id_store LEFT JOIN tb_order ON tb_order.id_pesanan = tb_payment.id_invoice LEFT JOIN tb_invoice ON tb_invoice.id_invoice = tb_payment.id_invoice WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_payment.bank='CASH' AND tb_store.id_area='${body.area}' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //       var [bca] = await connection.query(
-    //         `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(total_payment) as bca FROM tb_payment LEFT JOIN tb_store ON tb_store.id_store = tb_payment.id_store LEFT JOIN tb_order ON tb_order.id_pesanan = tb_payment.id_invoice LEFT JOIN tb_invoice ON tb_invoice.id_invoice = tb_payment.id_invoice WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_payment.bank='DEBIT' AND tb_store.id_area='${body.area}' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //     } else {
-    //       var [dikirim] = await connection.query(
-    //         `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_store.id_area='${body.area}' AND tb_invoice.type_customer='${tipesales}' AND tb_invoice.status_pesanan = 'SEDANG DIKIRIM' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [selesai] = await connection.query(
-    //         `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_store.id_area='${body.area}' AND tb_invoice.type_customer='${tipesales}' AND tb_invoice.status_pesanan = 'SELESAI' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [cancel] = await connection.query(
-    //         `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_store.id_area='${body.area}' AND tb_invoice.type_customer='${tipesales}' AND tb_invoice.status_pesanan = 'CANCEL' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [cash] = await connection.query(
-    //         `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(total_payment) as cash FROM tb_payment LEFT JOIN tb_store ON tb_store.id_store = tb_payment.id_store LEFT JOIN tb_order ON tb_order.id_pesanan = tb_payment.id_invoice LEFT JOIN tb_invoice ON tb_invoice.id_invoice = tb_payment.id_invoice WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_payment.bank='CASH' AND tb_store.id_area='${body.area}' AND tb_invoice.type_customer='${tipesales}' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //       var [bca] = await connection.query(
-    //         `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(total_payment) as bca FROM tb_payment LEFT JOIN tb_store ON tb_store.id_store = tb_payment.id_store LEFT JOIN tb_order ON tb_order.id_pesanan = tb_payment.id_invoice LEFT JOIN tb_invoice ON tb_invoice.id_invoice = tb_payment.id_invoice WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_payment.bank='DEBIT' AND tb_store.id_area='${body.area}' AND tb_invoice.type_customer='${tipesales}' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //     }
-    //   }
-    // } else {
-    //   if (query === "all") {
-    //     if (tipesales === "all") {
-    //       var [dikirim] = await connection.query(
-    //         `SELECT * FROM tb_invoice WHERE (type_customer='Reseller' OR type_customer='Grosir' OR type_customer='Retail') AND payment='PAID' AND status_pesanan = 'SEDANG DIKIRIM' AND customer='${store}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-    //       );
-    //       var [selesai] = await connection.query(
-    //         `SELECT * FROM tb_invoice WHERE (type_customer='Reseller' OR type_customer='Grosir' OR type_customer='Retail') AND payment='PAID' AND status_pesanan = 'SELESAI' AND customer='${store}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-    //       );
-    //       var [cancel] = await connection.query(
-    //         `SELECT * FROM tb_invoice WHERE (type_customer='Reseller' OR type_customer='Grosir' OR type_customer='Retail') AND payment='PAID' AND status_pesanan = 'CANCEL' AND customer='${store}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-    //       );
-    //       var [cash] = await connection.query(
-    //         `SELECT bank,id_invoice,SUM(total_payment) as cash FROM tb_payment WHERE id_store='${store}' AND bank='CASH' AND tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //       var [bca] = await connection.query(
-    //         `SELECT bank,id_invoice,SUM(total_payment) as bca FROM tb_payment WHERE id_store='${store}' AND bank='DEBIT' AND tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //     } else {
-    //       var [dikirim] = await connection.query(
-    //         `SELECT * FROM tb_invoice WHERE (type_customer='Reseller' OR type_customer='Grosir' OR type_customer='Retail') AND payment='PAID' AND status_pesanan = 'SEDANG DIKIRIM' AND customer='${store}' AND type_customer='${tipesales}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-    //       );
-    //       var [selesai] = await connection.query(
-    //         `SELECT * FROM tb_invoice WHERE (type_customer='Reseller' OR type_customer='Grosir' OR type_customer='Retail') AND payment='PAID' AND status_pesanan = 'SELESAI' AND customer='${store}' AND type_customer='${tipesales}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-    //       );
-    //       var [cancel] = await connection.query(
-    //         `SELECT * FROM tb_invoice WHERE (type_customer='Reseller' OR type_customer='Grosir' OR type_customer='Retail') AND payment='PAID' AND status_pesanan = 'CANCEL' AND customer='${store}' AND type_customer='${tipesales}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-    //       );
-    //       var [cash] = await connection.query(
-    //         `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(total_payment) as cash FROM tb_payment LEFT JOIN tb_invoice ON tb_invoice.id_invoice = tb_payment.id_invoice WHERE tb_payment.id_store='${store}' AND tb_invoice.type_customer='${tipesales}' AND tb_payment.bank='CASH' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //       var [bca] = await connection.query(
-    //         `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(total_payment) as bca FROM tb_payment LEFT JOIN tb_invoice ON tb_invoice.id_invoice = tb_payment.id_invoice WHERE tb_payment.id_store='${store}' AND tb_invoice.type_customer='${tipesales}' AND tb_payment.bank='DEBIT' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //     }
-    //   } else {
-    //     if (tipesales === "all") {
-    //       var [dikirim] = await connection.query(
-    //         `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.customer='${store}' AND tb_invoice.status_pesanan = 'SEDANG DIKIRIM' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [selesai] = await connection.query(
-    //         `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.customer='${store}' AND tb_invoice.status_pesanan = 'SELESAI' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [cancel] = await connection.query(
-    //         `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.customer='${store}' AND tb_invoice.status_pesanan = 'CANCEL' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [cash] = await connection.query(
-    //         `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(total_payment) as cash FROM tb_payment LEFT JOIN tb_invoice ON tb_invoice.id_invoice = tb_payment.id_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_payment.id_invoice WHERE (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_payment.id_store='${store}' AND tb_payment.bank='CASH' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //       var [bca] = await connection.query(
-    //         `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(total_payment) as bca FROM tb_payment LEFT JOIN tb_invoice ON tb_invoice.id_invoice = tb_payment.id_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_payment.id_invoice WHERE (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_payment.id_store='${store}' AND tb_payment.bank='DEBIT' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //     } else {
-    //       var [dikirim] = await connection.query(
-    //         `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.customer='${store}' AND tb_invoice.type_customer='${tipesales}' AND tb_invoice.status_pesanan = 'SEDANG DIKIRIM' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [selesai] = await connection.query(
-    //         `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.customer='${store}' AND tb_invoice.type_customer='${tipesales}' AND tb_invoice.status_pesanan = 'SELESAI' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [cancel] = await connection.query(
-    //         `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE (tb_invoice.type_customer='Reseller' OR tb_invoice.type_customer='Grosir' OR tb_invoice.type_customer='Retail') AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.customer='${store}' AND tb_invoice.type_customer='${tipesales}' AND tb_invoice.status_pesanan = 'CANCEL' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY tb_invoice.id DESC`
-    //       );
-    //       var [cash] = await connection.query(
-    //         `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(total_payment) as cash FROM tb_payment LEFT JOIN tb_invoice ON tb_invoice.id_invoice = tb_payment.id_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_payment.id_invoice WHERE (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_payment.id_store='${store}' AND tb_invoice.type_customer='${tipesales}' AND tb_payment.bank='CASH' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //       var [bca] = await connection.query(
-    //         `SELECT tb_payment.bank,tb_payment.id_invoice,SUM(total_payment) as bca FROM tb_payment LEFT JOIN tb_invoice ON tb_invoice.id_invoice = tb_payment.id_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_payment.id_invoice WHERE (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_payment.id_store='${store}' AND tb_invoice.type_customer='${tipesales}' AND tb_payment.bank='DEBIT' AND tb_payment.tanggal_pembayaran BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-    //       );
-    //     }
-    //   }
-    // }
-
-    // datas.push({
-    //   dikirim: dikirim.length,
-    //   selesai: selesai.length,
-    //   cancel: cancel.length,
-    // });
-
-    await connection.commit();
-    await connection.release();
-
-    // return datas;
-  } catch (error) {
-    console.log(error);
-    await connection.release();
-  }
-};
-
-const getHeaderpesananresellerpaid = async (body) => {
-  const connection = await dbPool.getConnection();
-  const tanggal_skrg = date.format(new Date(), "YYYY-MM-DD");
-
-  var status = body.status_pesanan;
-  var store = body.store;
-  var query = body.query;
-  var tipesales = body.tipe_sales;
-
-  const tanggal = body.date;
-  const myArray = tanggal.split(" to ");
-
-  if (tanggal.length > 10) {
-    var tanggal_start = myArray[0];
-    var tanggal_end = myArray[1];
-  } else {
-    var tanggal_start = tanggal;
-    var tanggal_end = tanggal;
-  }
-
-  const datas = [];
-  try {
-    await connection.beginTransaction();
-    if (store === "all") {
-      if (query === "all") {
-        if (tipesales === "all") {
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.subtotal) as omzet FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE tb_invoice.sales_channel='OFFLINE STORE' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [sales] = await connection.query(
-            `SELECT id_pesanan FROM tb_invoice WHERE sales_channel='OFFLINE STORE' AND status_pesanan='${status}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-        } else {
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.subtotal) as omzet FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE tb_invoice.sales_channel='OFFLINE STORE' AND tb_invoice.status_pesanan='${status}' AND tb_invoice.type_customer='${tipesales}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [sales] = await connection.query(
-            `SELECT id_pesanan FROM tb_invoice WHERE sales_channel='OFFLINE STORE' AND status_pesanan='${status}' AND type_customer='${tipesales}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-        }
-      } else {
-        if (tipesales === "all") {
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.subtotal) as omzet FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE tb_invoice.sales_channel='OFFLINE STORE' AND tb_invoice.status_pesanan='${status}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [sales] = await connection.query(
-            `SELECT * FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE tb_invoice.sales_channel='OFFLINE STORE' AND tb_invoice.status_pesanan='${status}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-        } else {
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.subtotal) as omzet FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE tb_invoice.sales_channel='OFFLINE STORE' AND tb_invoice.status_pesanan='${status}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.type_customer='${tipesales}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [sales] = await connection.query(
-            `SELECT * FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE tb_invoice.sales_channel='OFFLINE STORE' AND tb_invoice.status_pesanan='${status}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.type_customer='${tipesales}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-        }
-      }
-    } else if (store === "all_area") {
-      if (query === "all") {
-        if (tipesales === "all") {
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.subtotal) as omzet FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.sales_channel='OFFLINE STORE' AND tb_invoice.status_pesanan='${status}' AND tb_store.id_area='${body.area}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [sales] = await connection.query(
-            `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.sales_channel='OFFLINE STORE' AND tb_invoice.status_pesanan='${status}' AND tb_store.id_area='${body.area}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-        } else {
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.subtotal) as omzet FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.sales_channel='OFFLINE STORE' AND tb_invoice.status_pesanan='${status}' AND tb_store.id_area='${body.area}' AND tb_invoice.type_customer='${tipesales}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [sales] = await connection.query(
-            `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.sales_channel='OFFLINE STORE' AND tb_invoice.status_pesanan='${status}' AND tb_store.id_area='${body.area}' AND tb_invoice.type_customer='${tipesales}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-        }
-      } else {
-        if (tipesales === "all") {
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.subtotal) as omzet FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.sales_channel='OFFLINE STORE' AND tb_invoice.status_pesanan='${status}' AND tb_store.id_area='${body.area}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [sales] = await connection.query(
-            `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.sales_channel='OFFLINE STORE' AND tb_invoice.status_pesanan='${status}' AND tb_store.id_area='${body.area}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-        } else {
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.subtotal) as omzet FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.sales_channel='OFFLINE STORE' AND tb_invoice.status_pesanan='${status}' AND tb_store.id_area='${body.area}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.type_customer='${tipesales}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [sales] = await connection.query(
-            `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan LEFT JOIN tb_store ON tb_invoice.customer = tb_store.id_store WHERE tb_invoice.sales_channel='OFFLINE STORE' AND tb_invoice.status_pesanan='${status}' AND tb_store.id_area='${body.area}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.type_customer='${tipesales}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-        }
-      }
-    } else {
-      if (query === "all") {
-        if (tipesales === "all") {
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.subtotal) as omzet FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE tb_invoice.sales_channel='OFFLINE STORE' AND tb_invoice.status_pesanan='${status}' AND tb_invoice.customer='${store}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [sales] = await connection.query(
-            `SELECT id_pesanan FROM tb_invoice WHERE sales_channel='OFFLINE STORE' AND status_pesanan='${status}' AND customer='${store}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-        } else {
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.subtotal) as omzet FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE tb_invoice.sales_channel='OFFLINE STORE' AND tb_invoice.status_pesanan='${status}' AND tb_invoice.customer='${store}' AND tb_invoice.type_customer='${tipesales}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [sales] = await connection.query(
-            `SELECT id_pesanan FROM tb_invoice WHERE sales_channel='OFFLINE STORE' AND status_pesanan='${status}' AND customer='${store}' AND type_customer='${tipesales}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-        }
-      } else {
-        if (tipesales === "all") {
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.subtotal) as omzet FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE tb_invoice.sales_channel='OFFLINE STORE' AND tb_invoice.status_pesanan='${status}' AND tb_invoice.customer='${store}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [sales] = await connection.query(
-            `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE tb_invoice.sales_channel='OFFLINE STORE' AND tb_invoice.status_pesanan='${status}' AND tb_invoice.customer='${store}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-        } else {
-          var [header] = await connection.query(
-            `SELECT COUNT(tb_invoice.id_pesanan) as countsales,SUM(tb_order.subtotal) as subtotals,SUM(tb_order.qty) as totalqty,SUM(tb_order.m_price*tb_order.qty) as total_modal,SUM(tb_order.subtotal) as omzet FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE tb_invoice.sales_channel='OFFLINE STORE' AND tb_invoice.status_pesanan='${status}' AND tb_invoice.customer='${store}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.type_customer='${tipesales}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-          var [sales] = await connection.query(
-            `SELECT tb_invoice.id_pesanan FROM tb_invoice LEFT JOIN tb_order ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE tb_invoice.sales_channel='OFFLINE STORE' AND tb_invoice.status_pesanan='${status}' AND tb_invoice.customer='${store}' AND (tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' OR tb_order.id_produk LIKE '%${query}%' OR tb_order.produk LIKE '%${query}%') AND tb_invoice.type_customer='${tipesales}' AND tb_invoice.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-          );
-        }
-      }
-    }
-
-    datas.push({
-      sales: sales.length,
-      qty_sales: Math.round(header[0].totalqty ? header[0].totalqty : 0),
-      omzet: Math.round(header[0].omzet ? header[0].omzet : 0) + Math.round(header[0].total_diskon ? header[0].total_diskon : 0),
-      modal: Math.round(header[0].total_modal ? header[0].total_modal : 0),
-      gross_sales: header[0].omzet ? header[0].omzet : 0,
-      total_diskon: header[0].total_diskon ? header[0].total_diskon : 0,
-      net_sales: parseInt(header[0].omzet ? header[0].omzet : 0) - parseInt(header[0].total_modal ? header[0].total_modal : 0),
-    });
-
-    await connection.commit();
-    await connection.release();
-
-    return datas;
-  } catch (error) {
-    console.log(error);
-    await connection.release();
+    throw error;
   }
 };
 // END RESELLER PAID
@@ -1280,280 +615,251 @@ const getHeaderpesananresellerpaid = async (body) => {
 // RESELLER PENDING
 const orderresellerpending = async (body) => {
   const connection = await dbPool.getConnection();
-  const tanggal_skrg = date.format(new Date(), "YYYY-MM-DD");
-  // console.log(body);
-  var status = body.status_pesanan;
-  var query = body.query;
-  var store = body.store;
-
-  const tanggal = body.date;
-  const myArray = tanggal.split(" to ");
-
-  if (tanggal.length > 10) {
-    var tanggal_start = myArray[0];
-    var tanggal_end = myArray[1];
-  } else {
-    var tanggal_start = tanggal;
-    var tanggal_end = tanggal;
-  }
-
-  const datas = [];
-
-  if (store === "all") {
-    if (query === "all") {
-      var [get_orders] = await connection.query(
-        `SELECT * FROM tb_invoice WHERE type_customer!='Retail' AND status_pesanan='${status}' AND payment='PENDING' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-      );
-    } else {
-      var [get_orders] = await connection.query(
-        `SELECT * FROM tb_invoice WHERE type_customer!='Retail' AND id_pesanan LIKE '%${query}%' OR reseller LIKE '%${query}%' AND status_pesanan='${status}' AND payment='PENDING' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-      );
-    }
-  } else {
-    if (query === "all") {
-      var [get_orders] = await connection.query(
-        `SELECT * FROM tb_invoice WHERE type_customer!='Retail' AND status_pesanan='${status}' AND payment='PENDING' AND customer='${store}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-      );
-    } else {
-      var [get_orders] = await connection.query(
-        `SELECT * FROM tb_invoice WHERE type_customer!='Retail' AND id_pesanan LIKE '%${query}%' OR reseller LIKE '%${query}%' AND status_pesanan='${status}' AND paymet='PENDING' AND customer='${store}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-      );
-    }
-  }
-  try {
-    await connection.beginTransaction();
-
-    for (let i = 0; i < get_orders.length; i++) {
-      var [details_order] = await connection.query(
-        `SELECT tb_order.*,SUM(tb_order.qty) as qty,tb_warehouse.warehouse FROM tb_order LEFT JOIN tb_warehouse ON tb_order.id_ware = tb_warehouse.id_ware WHERE tb_order.id_pesanan='${get_orders[i].id_pesanan}' GROUP BY tb_order.size,tb_order.id_produk,tb_order.id_pesanan`
-      );
-      var [data_payment] = await connection.query(
-        `SELECT * FROM tb_payment WHERE id_invoice='${get_orders[i].id_invoice}'`
-      );
-      var [data_store] = await connection.query(
-        `SELECT * FROM tb_store WHERE id_store='${get_orders[i].customer}'`
-      );
-      var [data_payment] = await connection.query(
-        `SELECT *,SUM(total_payment) as total_payment FROM tb_payment WHERE id_invoice='${get_orders[i].id_invoice}' GROUP BY bank`
-      );
-
-      datas.push({
-        id: get_orders[i].id,
-        tanggal_order: get_orders[i].tanggal_order,
-        tanggal_update: get_orders[i].tanggal_update,
-        id_invoice: get_orders[i].id_invoice,
-        id_pesanan: get_orders[i].id_pesanan,
-        customer: get_orders[i].customer,
-        type_customer: get_orders[i].type_customer,
-        sales_channel: get_orders[i].sales_channel,
-        amount: get_orders[i].amount,
-        diskon_nota: get_orders[i].diskon_nota,
-        biaya_lainnya: get_orders[i].biaya_lainnya,
-        total_amount: get_orders[i].total_amount,
-        selisih: get_orders[i].selisih,
-        status_pesanan: get_orders[i].status_pesanan,
-        payment: get_orders[i].payment,
-        reseller: get_orders[i].reseller,
-        details_order: details_order,
-        data_payment: data_payment,
-        data_store: data_store,
-        data_payment: data_payment,
-      });
-    }
-    await connection.commit();
-    await connection.release();
-    // console.log(datas)
-    return datas;
-  } catch (error) {
-    console.log(error);
-    await connection.release();
-  }
-};
-
-const orderCountresellerpending = async (body) => {
-  const connection = await dbPool.getConnection();
-  const tanggal_skrg = date.format(new Date(), "YYYY-MM-DD");
-
-  var store = body.store;
-  var query = body.query;
-
-  const tanggal = body.date;
-  const myArray = tanggal.split(" to ");
-
-  if (tanggal.length > 10) {
-    var tanggal_start = myArray[0];
-    var tanggal_end = myArray[1];
-  } else {
-    var tanggal_start = tanggal;
-    var tanggal_end = tanggal;
-  }
-
-  const datas = [];
 
   try {
-    await connection.beginTransaction();
+    const {
+      status_pesanan,
+      query,
+      store,
+      date,
+      area,
+      tipe_sales,
+    } = body;
 
-    if (store === "all") {
-      if (query === "all") {
-        var [dikirim] = await connection.query(
-          `SELECT * FROM tb_invoice WHERE type_customer!='Retail' AND payment='PENDING' AND status_pesanan = 'SEDANG DIKIRIM' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-        );
-        var [selesai] = await connection.query(
-          `SELECT * FROM tb_invoice WHERE type_customer!='Retail' AND payment='PENDING' AND status_pesanan = 'SELESAI' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-        );
-        var [cancel] = await connection.query(
-          `SELECT * FROM tb_invoice WHERE type_customer!='Retail' AND payment='PENDING' AND status_pesanan = 'CANCEL' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-        );
-      } else {
-        var [dikirim] = await connection.query(
-          `SELECT * FROM tb_invoice WHERE type_customer!='Retail' AND id_pesanan LIKE '%${query}%' OR reseller LIKE '%${query}%' AND payment='PENDING' AND status_pesanan = 'SEDANG DIKIRIM' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-        );
-        var [selesai] = await connection.query(
-          `SELECT * FROM tb_invoice WHERE type_customer!='Retail' AND id_pesanan LIKE '%${query}%' OR reseller LIKE '%${query}%' AND payment='PENDING' AND status_pesanan = 'SELESAI' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-        );
-        var [cancel] = await connection.query(
-          `SELECT * FROM tb_invoice WHERE type_customer!='Retail' AND id_pesanan LIKE '%${query}%' OR reseller LIKE '%${query}%' AND payment='PENDING' AND status_pesanan = 'CANCEL' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-        );
-      }
+    const formatPayment = "PENDING";
+
+    const [tanggal_start, tanggal_end] =
+      date.includes(" to ") ? date.split(" to ") : [date, date];
+
+    const where = [];
+    const params = [];
+
+    // status
+    where.push(`inv.status_pesanan = ?`);
+    params.push(status_pesanan);
+
+    // payment (FIX)
+    where.push(`inv.payment = ?`);
+    params.push(formatPayment);
+
+    // tanggal
+    where.push(`inv.tanggal_order BETWEEN ? AND ?`);
+    params.push(tanggal_start, tanggal_end);
+
+    // tipe sales
+    if (tipe_sales !== "all") {
+      where.push(`inv.type_customer = ?`);
+      params.push(tipe_sales);
     } else {
-      if (query === "all") {
-        var [dikirim] = await connection.query(
-          `SELECT * FROM tb_invoice WHERE type_customer!='Retail' AND payment='PENDING' AND status_pesanan = 'SEDANG DIKIRIM' AND store='${store}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-        );
-        var [selesai] = await connection.query(
-          `SELECT * FROM tb_invoice WHERE type_customer!='Retail' AND payment='PENDING' AND status_pesanan = 'SELESAI' AND store='${store}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-        );
-        var [cancel] = await connection.query(
-          `SELECT * FROM tb_invoice WHERE type_customer!='Retail' AND payment='PENDING' AND status_pesanan = 'CANCEL' AND store='${store}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-        );
-      } else {
-        var [dikirim] = await connection.query(
-          `SELECT * FROM tb_invoice WHERE type_customer!='Retail' AND id_pesanan LIKE '%${query}%' OR reseller LIKE '%${query}%' payment='PENDING' AND status_pesanan = 'SEDANG DIKIRIM' AND store='${store}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-        );
-        var [selesai] = await connection.query(
-          `SELECT * FROM tb_invoice WHERE type_customer!='Retail' AND id_pesanan LIKE '%${query}%' OR reseller LIKE '%${query}%' payment='PENDING' AND status_pesanan = 'SELESAI' AND store='${store}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-        );
-        var [cancel] = await connection.query(
-          `SELECT * FROM tb_invoice WHERE type_customer!='Retail' AND id_pesanan LIKE '%${query}%' OR reseller LIKE '%${query}%' payment='PENDING' AND status_pesanan = 'CANCEL' AND store='${store}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}' ORDER BY id DESC`
-        );
-      }
+      where.push(`inv.type_customer IN ('Reseller','Grosir','Retail')`);
     }
 
-    datas.push({
-      dikirim: dikirim.length,
-      selesai: selesai.length,
-      cancel: cancel.length,
+    // store / area
+    if (store === "all_area") {
+      where.push(`st.id_area = ?`);
+      params.push(area);
+    } else if (store !== "all") {
+      where.push(`inv.customer = ?`);
+      params.push(store);
+    }
+
+    // search
+    if (query !== "all") {
+      where.push(`
+        (
+          inv.id_pesanan LIKE ?
+          OR inv.reseller LIKE ?
+          OR ord.produk LIKE ?
+          OR ord.id_produk LIKE ?
+          OR CONCAT(ord.id_produk,'.',ord.size) LIKE ?
+          OR CONCAT(ord.produk,'.',ord.size) LIKE ?
+        )
+      `);
+      params.push(
+        `%${query}%`,
+        `%${query}%`,
+        `%${query}%`,
+        `%${query}%`,
+        `%${query}%`,
+        `%${query}%`
+      );
+    }
+
+    // ===== ORDERS =====
+    const [orders] = await connection.query(
+      `
+      SELECT
+        inv.id,
+        inv.id_pesanan,
+        inv.tanggal_order,
+        inv.type_customer,
+        inv.created_at,
+        inv.users,
+        st.store,
+        st.address,
+        inv.reseller,
+        inv.selisih
+      FROM tb_invoice inv
+      LEFT JOIN tb_order ord ON ord.id_pesanan = inv.id_pesanan
+      LEFT JOIN tb_store st ON inv.customer = st.id_store
+      WHERE ${where.join(" AND ")}
+      GROUP BY inv.id_pesanan
+      ORDER BY inv.id DESC
+      `,
+      params
+    );
+
+    // ===== HEADER =====
+    const [header] = await connection.query(
+      `
+      SELECT
+        COUNT(DISTINCT inv.id_pesanan) as countsales,
+        SUM(ord.qty) as totalqty,
+        SUM(ord.subtotal) as omzet,
+        SUM(ord.m_price * ord.qty) as total_modal,
+        SUM(ord.diskon_item) as total_diskon
+      FROM tb_invoice inv
+      LEFT JOIN tb_order ord ON ord.id_pesanan = inv.id_pesanan
+      LEFT JOIN tb_store st ON inv.customer = st.id_store
+      WHERE ${where.join(" AND ")}
+      `,
+      params
+    );
+
+    // ===== PAYMENT =====
+    const [payments] = await connection.query(
+      `
+      SELECT pay.bank, SUM(pay.total_payment) as total
+      FROM tb_payment pay
+      LEFT JOIN tb_invoice inv ON pay.id_invoice = inv.id_pesanan
+      LEFT JOIN tb_store st ON inv.customer = st.id_store
+      WHERE
+        inv.status_pesanan = ?
+        AND inv.tanggal_order BETWEEN ? AND ?
+        ${tipe_sales !== "all" ? "AND inv.type_customer = ?" : ""}
+        ${store === "all_area" ? "AND st.id_area = ?" : ""}
+        ${store !== "all" && store !== "all_area" ? "AND inv.customer = ?" : ""}
+      GROUP BY pay.bank
+      `,
+      params.filter(p => p !== `%${query}%`) // ← penting
+    );
+
+    let total_cash = 0;
+    let total_bca = 0;
+
+    payments.forEach(p => {
+      if (p.bank === "CASH") total_cash = Number(p.total || 0);
+      if (p.bank === "DEBIT") total_bca = Number(p.total || 0);
+    });
+
+    // ===== DETAILS =====
+    const ids = orders.map(o => o.id_pesanan);
+
+    const [details] = ids.length
+      ? await connection.query(
+        `
+          SELECT
+            ord.*,
+            SUM(ord.qty) as qty,
+            SUM(ord.subtotal) as subtotal,
+            SUM(ord.m_price * ord.qty) as modal
+          FROM tb_order ord
+          WHERE ord.id_pesanan IN (?)
+          GROUP BY ord.id_pesanan, ord.id_produk, ord.size
+          `,
+        [ids]
+      )
+      : [[]];
+
+    const detailMap = {};
+    details.forEach(d => {
+      if (!detailMap[d.id_pesanan]) detailMap[d.id_pesanan] = [];
+      detailMap[d.id_pesanan].push(d);
+    });
+
+    const [paymentDetails] = ids.length
+      ? await connection.query(
+        `
+      SELECT
+        id_invoice,
+        bank,
+        SUM(total_payment) as total_payment
+      FROM tb_payment
+      WHERE id_invoice IN (?)
+      GROUP BY id_invoice, bank
+      `,
+        [ids]
+      )
+      : [[]];
+
+    const paymentMap = {};
+    paymentDetails.forEach(p => {
+      if (!paymentMap[p.id_invoice]) {
+        paymentMap[p.id_invoice] = [];
+      }
+      paymentMap[p.id_invoice].push(p);
+    });
+
+    const datas = orders.map(o => {
+      const details = detailMap[o.id_pesanan] || [];
+      const payments = paymentMap[o.id_pesanan] || [];
+
+      const modalakhir = details.reduce(
+        (sum, d) => sum + Number(d.modal || 0),
+        0
+      );
+
+      const subtotalakhir = details.reduce(
+        (sum, d) => sum + Number(d.subtotal || 0),
+        0
+      );
+
+      const total_diskon = details.reduce(
+        (sum, d) => sum + Number(d.diskon_item || 0),
+        0
+      );
+
+      const subtotalstandar = payments.reduce(
+        (sum, p) => sum + Number(p.total_payment || 0),
+        0
+      );
+
+      return {
+        ...o,
+        modalakhir,
+        subtotalakhir,
+        subtotalstandar,
+        total_diskon,
+        details_order: details,
+        data_payment: payments
+      };
     });
 
     await connection.commit();
     await connection.release();
-    // console.log(datas)
-    return datas;
+
+    return {
+      datas,
+      selesai: orders.length,
+      sales: orders.length,
+      qty_sales: Math.round(header[0]?.totalqty || 0),
+      omzet: Math.round(header[0]?.omzet || 0),
+      modal: Math.round(header[0]?.total_modal || 0),
+      total_diskon: Math.round(header[0]?.total_diskon || 0),
+      net_sales:
+        Number(header[0]?.omzet || 0) -
+        Number(header[0]?.total_diskon || 0),
+      payment_cash: total_cash,
+      payment_bca: total_bca
+    };
+
   } catch (error) {
-    console.log(error);
+    console.error(error);
     await connection.release();
+    throw error;
   }
 };
 
-const getHeaderpesananresellerpending = async (body) => {
-  const connection = await dbPool.getConnection();
-  const tanggal_skrg = date.format(new Date(), "YYYY-MM-DD");
-
-  var status = body.status_pesanan;
-  var store = body.store;
-  var query = body.query;
-
-  const tanggal = body.date;
-  const myArray = tanggal.split(" to ");
-
-  if (tanggal.length > 10) {
-    var tanggal_start = myArray[0];
-    var tanggal_end = myArray[1];
-  } else {
-    var tanggal_start = tanggal;
-    var tanggal_end = tanggal;
-  }
-
-  const datas = [];
-
-  try {
-    await connection.beginTransaction();
-
-    if (store === "all") {
-      if (query === "all") {
-        var [sales] = await connection.query(
-          `SELECT * FROM tb_invoice WHERE type_customer!='Retail' AND status_pesanan='${status}' AND payment='PENDING' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-        );
-        var [qty_sales] = await connection.query(
-          `SELECT tb_order.*,tb_invoice.*,SUM(qty) as total FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE tb_invoice.type_customer!='Retail' AND tb_invoice.status_pesanan='${status}' AND payment='PENDING' AND tb_order.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-        );
-        var [omzet] = await connection.query(
-          `SELECT *,SUM(total_amount) as amount FROM tb_invoice WHERE type_customer!='Retail' AND status_pesanan='${status}' AND payment='PENDING' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-        );
-        var [modal] = await connection.query(
-          `SELECT tb_order.*,tb_invoice.*,SUM(m_price) as total_modal FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE tb_invoice.type_customer!='Retail' AND tb_invoice.status_pesanan='${status}' AND payment='PENDING' AND tb_order.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-        );
-      } else {
-        var [sales] = await connection.query(
-          `SELECT * FROM tb_invoice WHERE type_customer!='Retail' AND id_pesanan LIKE '%${query}%' OR reseller LIKE '%${query}%' AND status_pesanan='${status}' AND payment='PENDING' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-        );
-        var [qty_sales] = await connection.query(
-          `SELECT tb_order.*,tb_invoice.*,SUM(qty) as total FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE tb_invoice.type_customer!='Retail' AND tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' AND tb_invoice.status_pesanan='${status}' AND payment='PENDING' AND tb_order.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-        );
-        var [omzet] = await connection.query(
-          `SELECT *,SUM(total_amount) as amount FROM tb_invoice WHERE type_customer!='Retail' AND id_pesanan LIKE '%${query}%' OR reseller LIKE '%${query}%' AND status_pesanan='${status}' AND payment='PENDING' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-        );
-        var [modal] = await connection.query(
-          `SELECT tb_order.*,tb_invoice.*,SUM(m_price) as total_modal FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE tb_invoice.type_customer!='Retail' AND tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' AND tb_invoice.status_pesanan='${status}' AND payment='PENDING' AND tb_order.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-        );
-      }
-    } else {
-      if (query === "all") {
-        var [sales] = await connection.query(
-          `SELECT * FROM tb_invoice WHERE type_customer!='Retail' AND status_pesanan='${status}' AND payment='PENDING' AND customer='${store}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-        );
-        var [qty_sales] = await connection.query(
-          `SELECT tb_order.*,tb_invoice.*,SUM(qty) as total FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE tb_invoice.type_customer!='Retail' AND tb_invoice.status_pesanan='${status}' AND payment='PENDING' AND tb_order.id_store='${store}' AND tb_order.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-        );
-        var [omzet] = await connection.query(
-          `SELECT *,SUM(total_amount) as amount FROM tb_invoice WHERE type_customer!='Retail' AND status_pesanan='${status}' AND payment='PENDING' AND customer='${store}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-        );
-        var [modal] = await connection.query(
-          `SELECT tb_order.*,tb_invoice.*,SUM(m_price) as total_modal FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE tb_invoice.type_customer!='Retail' AND tb_invoice.status_pesanan='${status}' AND payment='PENDING' AND tb_order.id_store='${store}' AND tb_order.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-        );
-      } else {
-        var [sales] = await connection.query(
-          `SELECT * FROM tb_invoice WHERE type_customer!='Retail' AND id_pesanan LIKE '%${query}%' OR reseller LIKE '%${query}%' AND status_pesanan='${status}' AND payment='PENDING' AND customer='${store}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-        );
-        var [qty_sales] = await connection.query(
-          `SELECT tb_order.*,tb_invoice.*,SUM(qty) as total FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE tb_invoice.type_customer!='Retail' AND tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' AND tb_invoice.status_pesanan='${status}' AND payment='PENDING' AND tb_order.id_store='${store}' AND tb_order.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-        );
-        var [omzet] = await connection.query(
-          `SELECT *,SUM(total_amount) as amount FROM tb_invoice WHERE type_customer!='Retail' AND id_pesanan LIKE '%${query}%' OR reseller LIKE '%${query}%' AND status_pesanan='${status}' AND payment='PENDING' AND customer='${store}' AND tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-        );
-        var [modal] = await connection.query(
-          `SELECT tb_order.*,tb_invoice.*,SUM(m_price) as total_modal FROM tb_order LEFT JOIN tb_invoice ON tb_order.id_pesanan = tb_invoice.id_pesanan WHERE tb_invoice.type_customer!='Retail' AND tb_invoice.id_pesanan LIKE '%${query}%' OR tb_invoice.reseller LIKE '%${query}%' AND tb_invoice.status_pesanan='${status}' AND payment='PENDING' AND tb_order.id_store='${store}' AND tb_order.tanggal_order BETWEEN '${tanggal_start}' AND '${tanggal_end}'`
-        );
-      }
-    }
-
-    datas.push({
-      sales: sales.length,
-      qty_sales: Math.round(qty_sales[0].total),
-      omzet: Math.round(omzet[0].amount),
-      modal: Math.round(modal[0].total_modal),
-      net_sales: parseInt(omzet[0].amount) - parseInt(modal[0].total_modal),
-    });
-
-    await connection.commit();
-    await connection.release();
-    // console.log(datas)
-    return datas;
-  } catch (error) {
-    console.log(error);
-    await connection.release();
-  }
-};
 // END RESELLER PENDING
 //
 //
@@ -1938,11 +1244,7 @@ module.exports = {
   productsSalesretail,
   inputSalesretail,
   orderresellerpaid,
-  orderCountresellerpaid,
-  getHeaderpesananresellerpaid,
   orderresellerpending,
-  orderCountresellerpending,
-  getHeaderpesananresellerpending,
   orderresellerretail,
   orderCountresellerretail,
   getHeaderpesananresellerretail,

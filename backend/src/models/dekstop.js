@@ -3,6 +3,7 @@ const dbPool = require("../config/database");
 const date = require("date-and-time");
 const tanggal = date.format(new Date(), "YYYY/MM/DD HH:mm:ss");
 const { generateFromEmail } = require("unique-username-generator");
+const { v4: uuidv4 } = require("uuid");
 
 // karyawan
 const getKaryawan = async (body) => {
@@ -667,6 +668,7 @@ const getStores = async (body) => {
         store: data_stores[index].store,
         channel: data_stores[index].channel,
         address: data_stores[index].address,
+        ip: data_stores[index].ip,
         created_at: data_stores[index].created_at,
         updated_at: data_stores[index].updated_at,
       });
@@ -701,8 +703,8 @@ const addStore = async (body) => {
 
     await connection.query(
       `INSERT INTO tb_store
-      (id_store, id_ware, id_area, store, channel, address, created_at, updated_at)
-      VALUES ('${id_store}','${body.id_ware}','${body.id_area}','${body.store}','${body.channel}','${body.alamat}','${tanggal}','${tanggal}')`
+      (id_store, id_ware, id_area, store, channel, address, ip, created_at, updated_at)
+      VALUES ('${id_store}','${body.id_ware}','${body.id_area}','${body.store}','${body.channel}','${body.alamat}','${body.ip}','${tanggal}','${tanggal}')`
     );
 
     await connection.commit();
@@ -741,7 +743,7 @@ const editStore = async (body) => {
     await connection.beginTransaction();
 
     await connection.query(
-      `UPDATE tb_store SET id_ware='${body.data.edit_id_ware}',id_area='${body.data.edit_id_area}',store='${body.data.edit_store}',channel='${body.data.edit_channel}',address='${body.data.edit_alamat}',updated_at='${tanggal}' WHERE id='${body.id}'`
+      `UPDATE tb_store SET id_ware='${body.data.edit_id_ware}',id_area='${body.data.edit_id_area}',store='${body.data.edit_store}',channel='${body.data.edit_channel}',address='${body.data.edit_alamat}',ip='${body.data.edit_ip}',updated_at='${tanggal}' WHERE id='${body.id}'`
     );
 
     await connection.commit();
@@ -914,8 +916,8 @@ const addWarehouse = async (body) => {
 
     await connection.query(
       `INSERT INTO tb_warehouse
-      (id_ware, id_area, warehouse, address, created_at, updated_at)
-      VALUES ('${id_ware}','${body.id_area}','${body.warehouse}','${body.alamat}','${tanggal}','${tanggal}')`
+      (id_ware, id_area, warehouse, address, id_cat, created_at, updated_at)
+      VALUES ('${id_ware}','${body.id_area}','${body.warehouse}','${body.alamat}','${body.category}','${tanggal}','${tanggal}')`
     );
 
     await connection.commit();
@@ -932,9 +934,11 @@ const editWarehouse = async (body) => {
   const tanggal = date.format(new Date(), "YYYY/MM/DD HH:mm:ss");
   try {
     await connection.beginTransaction();
+    console.log("edit ware", body);
+
 
     await connection.query(
-      `UPDATE tb_warehouse SET id_area='${body.data.edit_id_area}',warehouse='${body.data.edit_warehouse}',address='${body.data.edit_alamat}',updated_at='${tanggal}' WHERE id='${body.id}'`
+      `UPDATE tb_warehouse SET id_area='${body.data.edit_id_area}',warehouse='${body.data.edit_warehouse}',address='${body.data.edit_alamat}',id_cat='${body.data.edit_category}',updated_at='${tanggal}' WHERE id='${body.id}'`
     );
 
     await connection.commit();
@@ -2032,6 +2036,622 @@ const getHistoryDetail = async (body) => {
   }
 };
 
+
+const getlistbelanja = async (body) => {
+  const connection = await dbPool.getConnection();
+  const tanggal = date.format(new Date(), "YYYY/MM/DD HH:mm:ss");
+  try {
+    await connection.beginTransaction();
+
+    const [hasil] = await connection.query(
+      `SELECT 
+        tb_list.tanggal_order,
+        tb_list.id_pesanan,
+        tb_list.batas_kirim,
+        tb_list.cod,
+        tb_list.jasa_kirim,
+        tb_list.resi as no_resi,
+        tb_list_detail.id as id_list,
+        tb_list_detail.produk,
+        tb_list_detail.qty,
+        tb_list_detail.acc,
+        tb_list_detail.id_ware,
+        tb_list_detail.id_store as store,
+        tb_list_detail.size,
+        tb_list_detail.status,
+        tb_list_detail.m_price,
+        tb_list_detail.resi
+      FROM tb_list
+      LEFT JOIN tb_list_detail ON tb_list.id_pesanan = tb_list_detail.id_pesanan
+      ORDER BY tb_list_detail.tanggal_order ASC,tb_list_detail.id_pesanan DESC`
+    );
+
+    // Additional queries for total qty today and before today
+    const todayOnly = date.format(new Date(), "YYYY-MM-DD");
+
+    const [sumToday] = await connection.query(
+      `SELECT SUM(tb_list_detail.qty) as total_today
+       FROM tb_list
+       LEFT JOIN tb_list_detail ON tb_list.id_pesanan = tb_list_detail.id_pesanan
+       WHERE DATE(tb_list.tanggal_order) = ? AND tb_list_detail.size NOT LIKE '%DOUBLE BOX%'`, [todayOnly]
+    );
+
+    const [sumBeforeToday] = await connection.query(
+      `SELECT SUM(tb_list_detail.qty) as total_before
+       FROM tb_list
+       LEFT JOIN tb_list_detail ON tb_list.id_pesanan = tb_list_detail.id_pesanan
+       WHERE DATE(tb_list.tanggal_order) < ? AND tb_list_detail.size NOT LIKE '%DOUBLE BOX%'`, [todayOnly]
+    );
+
+    // New: Query for total qty regardless of date
+    const [sumTotal] = await connection.query(
+      `SELECT SUM(tb_list_detail.qty) as total_all
+       FROM tb_list
+       LEFT JOIN tb_list_detail ON tb_list.id_pesanan = tb_list_detail.id_pesanan
+       WHERE tb_list_detail.size NOT LIKE '%DOUBLE BOX%'`
+    );
+
+    const [sumReady] = await connection.query(
+      `SELECT SUM(tb_list_detail.qty) as total_all
+       FROM tb_list
+       LEFT JOIN tb_list_detail ON tb_list.id_pesanan = tb_list_detail.id_pesanan
+       WHERE tb_list_detail.status = 'READY' AND tb_list_detail.size NOT LIKE '%DOUBLE BOX%'`
+    );
+
+    await connection.commit();
+    await connection.release();
+
+    return {
+      hasil,
+      today: sumToday[0].total_today || 0,
+      yesterday: sumBeforeToday[0].total_before || 0,
+      totalqty: sumTotal[0].total_all || 0,
+      ready: sumReady[0].total_all || 0,
+    };
+  } catch (error) {
+    console.log(error);
+    await connection.release();
+  }
+};
+
+const inputlistbelanja = async (body) => {
+  const connection = await dbPool.getConnection();
+  const tanggal = date.format(new Date(), "YYYY/MM/DD HH:mm:ss");
+  try {
+    await connection.beginTransaction();
+
+    // console.dir(body, { depth: null, colors: true });
+
+    for (const item of body) {
+      // Check for existing id_pesanan in tb_list
+      const [existing] = await connection.query(
+        `SELECT id_pesanan FROM tb_list WHERE id_pesanan = ?`,
+        [item.id_pesanan]
+      );
+      const [existingInvoice] = await connection.query(
+        `SELECT id_pesanan FROM tb_invoice WHERE id_pesanan = ?`,
+        [item.id_pesanan]
+      );
+      if (existing.length > 0 || existingInvoice.length > 0) {
+        console.log("Skipping existing id_pesanan:", item.id_pesanan);
+        continue;
+      }
+      // Insert into tb_list
+      await connection.query(
+        `INSERT INTO tb_list 
+          (tanggal_order, batas_kirim, cod, jasa_kirim, resi, id_pesanan, id_store, amount, users, created_at, updated_at) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          item.tanggal_order,
+          item.batas_kirim,
+          item.cod,
+          item.jasa_kirim,
+          item.resi,
+          item.id_pesanan,
+          item.id_store,
+          item.amount,
+          item.users,
+          tanggal,
+          tanggal,
+        ]
+      );
+
+      // Insert into tb_list_detail
+      for (const detail of item.data) {
+        // Ambil semua parameter dari tb_parameter
+        const [params] = await connection.query("SELECT parameter FROM tb_parameter");
+        let cleanedProduct = detail.produk;
+        for (const p of params) {
+          const regex = new RegExp(p.parameter, 'gi'); // case insensitive
+          cleanedProduct = cleanedProduct.replace(regex, '').trim();
+        }
+        await connection.query(
+          `INSERT INTO tb_list_detail 
+            (tanggal_order, id_pesanan, id_store, id_produk, source, img, id_ware, produk, size, qty, m_price, selling_price, subtotal, users, acc, created_at, updated_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            item.tanggal_order,
+            item.id_pesanan,
+            item.id_store,
+            uuidv4(), // generate unique id_produk,
+            detail.source,
+            detail.img,
+            null,
+            cleanedProduct,
+            detail.size,
+            detail.qty,
+            detail.m_price,
+            detail.selling_price,
+            detail.selling_price, // subtotal = selling_price * 1
+            item.users,
+            detail.acc,
+            tanggal,
+            tanggal,
+          ]
+        );
+      }
+    }
+
+    await connection.commit();
+    await connection.release();
+    // Kirim response sukses ke frontend
+    const hasil = { success: true, message: "Data inserted successfully" };
+    return hasil;
+  } catch (error) {
+    console.log(error);
+    await connection.release();
+    // Kirim response error ke frontend
+    return { success: false, message: error.message };
+  }
+};
+
+const updatesupplier = async (body) => {
+  const connection = await dbPool.getConnection();
+  const tanggal = date.format(new Date(), "YYYY/MM/DD HH:mm:ss");
+  try {
+    await connection.beginTransaction();
+    console.log("body supplier:", body);
+
+    await connection.query(
+      `UPDATE tb_list_detail SET id_ware = ? WHERE id = ?`,
+      [body.id_ware, body.id_list]
+    );
+
+    await connection.commit();
+    await connection.release();
+
+    return { result: "success" };
+  } catch (error) {
+    console.log(error);
+    await connection.rollback();
+    await connection.release();
+    return { result: "error", message: error.message };
+  }
+};
+
+const updatestatus = async (body) => {
+  const connection = await dbPool.getConnection();
+  const tanggal = date.format(new Date(), "YYYY/MM/DD HH:mm:ss");
+  try {
+    await connection.beginTransaction();
+
+    await connection.query(
+      `UPDATE tb_list_detail SET status = ? WHERE produk = ? AND id_pesanan = ?`,
+      [body.status, body.produk, body.id_pesanan]
+    );
+
+    await connection.commit();
+    await connection.release();
+
+    return { result: "success" };
+  } catch (error) {
+    console.log(error);
+    await connection.rollback();
+    await connection.release();
+    return { result: "error", message: error.message };
+  }
+};
+
+const updatemprice_listbelanja = async (body) => {
+  const connection = await dbPool.getConnection();
+  const tanggal = date.format(new Date(), "YYYY/MM/DD HH:mm:ss");
+  try {
+    await connection.beginTransaction();
+
+    await connection.query(
+      `UPDATE tb_list_detail SET m_price = ? WHERE produk = ? AND id_pesanan = ?`,
+      [body.m_price, body.produk, body.id_pesanan]
+    );
+
+    await connection.commit();
+    await connection.release();
+
+    return { result: "success" };
+  } catch (error) {
+    console.log(error);
+    await connection.rollback();
+    await connection.release();
+    return { result: "error", message: error.message };
+  }
+};
+
+const updateacc_listbelanja = async (body) => {
+  const connection = await dbPool.getConnection();
+  const tanggal = date.format(new Date(), "YYYY/MM/DD HH:mm:ss");
+  try {
+    await connection.beginTransaction();
+
+    await connection.query(
+      `UPDATE tb_list_detail SET acc = ? WHERE produk = ? AND id_pesanan = ?`,
+      [body.acc, body.produk, body.id_pesanan]
+    );
+
+    await connection.commit();
+    await connection.release();
+
+    return { result: "success" };
+  } catch (error) {
+    console.log(error);
+    await connection.rollback();
+    await connection.release();
+    return { result: "error", message: error.message };
+  }
+};
+
+const updateresi = async (body) => {
+  const connection = await dbPool.getConnection();
+  const tanggal = date.format(new Date(), "YYYY/MM/DD HH:mm:ss");
+  try {
+    await connection.beginTransaction();
+
+    await connection.query(
+      `UPDATE tb_list_detail 
+       LEFT JOIN tb_list ON tb_list_detail.id_pesanan = tb_list.id_pesanan 
+       SET tb_list_detail.resi = ? 
+       WHERE tb_list_detail.produk = ? AND tb_list.resi = ?`,
+      [body.resi, body.produk, body.no_resi]
+    );
+
+    await connection.commit();
+    await connection.release();
+
+    return { result: "success" };
+  } catch (error) {
+    console.log(error);
+    await connection.rollback();
+    await connection.release();
+    return { result: "error", message: error.message };
+  }
+};
+
+const deletemassal_listbelanja = async (body) => {
+  const connection = await dbPool.getConnection();
+  const tanggal = date.format(new Date(), "YYYY/MM/DD HH:mm:ss");
+  try {
+    await connection.beginTransaction();
+
+    // Delete multiple items
+    for (const item of body) {
+      await connection.query(
+        `DELETE FROM tb_list_detail WHERE id_pesanan = ? AND produk = ?`,
+        [item.id_pesanan, item.produk]
+      );
+
+      await connection.query(
+        `DELETE FROM tb_list WHERE id_pesanan = ?`,
+        [item.id_pesanan]
+      );
+    }
+
+    await connection.commit();
+    await connection.release();
+
+    return { result: "success" };
+  } catch (error) {
+    console.log(error);
+    await connection.rollback();
+    await connection.release();
+    return { result: "error", message: error.message };
+  }
+};
+
+const addparameter = async (body) => {
+  const connection = await dbPool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // Insert each parameter into tb_parameter
+    for (const param of body.parameters) {
+      await connection.query(
+        "INSERT INTO tb_parameter (parameter) VALUES (?)",
+        [param.parameter]
+      );
+    }
+
+    await connection.commit();
+    await connection.release();
+
+    return { result: "success" };
+
+  } catch (error) {
+    console.log(error);
+    await connection.rollback();
+    await connection.release();
+    return { result: "error", message: error.message };
+  }
+};
+
+const getparameter = async (body) => {
+  const connection = await dbPool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const [getparameter] = await connection.query(
+      `SELECT * FROM tb_parameter ORDER BY id DESC`
+    );
+
+    await connection.commit();
+    await connection.release();
+
+    return getparameter;
+
+  } catch (error) {
+    console.log(error);
+    await connection.rollback();
+    await connection.release();
+    return { result: "error", message: error.message };
+  }
+};
+
+const editparameter = async (body) => {
+  const connection = await dbPool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // Update each parameter in tb_parameter
+    for (const param of body.parameters) {
+      await connection.query(
+        `UPDATE tb_parameter SET parameter = ? WHERE id = ?`,
+        [param.parameter, param.id]
+      );
+    }
+
+    const [getparameter] = await connection.query(
+      `SELECT * FROM tb_parameter ORDER BY id DESC`
+    );
+
+    await connection.commit();
+    await connection.release();
+
+    return getparameter;
+  } catch (error) {
+    console.log(error);
+    await connection.rollback();
+    await connection.release();
+    return { result: "error", message: error.message };
+  }
+};
+
+const deleteparameter = async (body) => {
+  const connection = await dbPool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    await connection.query("DELETE FROM tb_parameter WHERE id = ?", [body.id]);
+
+    const [getparameter] = await connection.query("SELECT * FROM tb_parameter ORDER BY id DESC");
+    await connection.commit();
+    await connection.release();
+
+    return getparameter;
+  } catch (error) {
+    console.log(error);
+    await connection.rollback();
+    await connection.release();
+    return { result: "error", message: error.message };
+  }
+};
+
+const insertmassal = async (body) => {
+  const connection = await dbPool.getConnection();
+  const tanggal = date.format(new Date(), "YYYY-MM-DD HH:mm:ss");
+  const tanggal_skrg = date.format(new Date(), "YYYY-MM-DD");
+  try {
+    await connection.beginTransaction();
+
+    console.log("body insert", body);
+
+    // Prepare id_invoice initial value
+    const [cek_invoice] = await connection.query(
+      `SELECT MAX(id_invoice) as id_invoice FROM tb_invoice`
+    );
+    let last_invoice_number = 1;
+    if (cek_invoice[0].id_invoice) {
+      const data_2 = cek_invoice[0].id_invoice.toString().slice(-9);
+      last_invoice_number = parseInt(data_2) + 1;
+    }
+
+    // Prepare id_nota initial value
+    const [cek_nota] = await connection.query(
+      `SELECT MAX(id_nota) as id_nota FROM tb_notabarang`
+    );
+    let last_nota_number = 1;
+    if (cek_nota[0].id_nota) {
+      const last = cek_nota[0].id_nota.toString().slice(-7);
+      last_nota_number = parseInt(last) + 1;
+    }
+
+    // Start new logic: Insert for each item in body
+    for (const item of body) {
+      // Ambil data dari tb_list
+      const [listRows] = await connection.query(
+        `SELECT * FROM tb_list WHERE id_pesanan = ?`,
+        [item.id_pesanan]
+      );
+
+      if (listRows.length === 0) {
+        console.log("Data tb_list tidak ditemukan untuk id_pesanan:", item.id_pesanan);
+        continue;
+      }
+
+      const listData = listRows[0];
+
+      // Ambil detail dari tb_list_detail
+      const [detailRows] = await connection.query(
+        `SELECT * FROM tb_list_detail WHERE id_pesanan = ?`,
+        [item.id_pesanan]
+      );
+
+      // Generate unique id_invoice for this iteration
+      const id_invoice = "INV-" + String(last_invoice_number++).padStart(9, "0");
+
+      // Insert ke tb_invoice
+      await connection.query(
+        `INSERT INTO tb_invoice (
+            tanggal_order, batas_kirim, cod, jasa_kirim, resi, tanggal_update, id_invoice, id_pesanan,
+            customer, type_customer, sales_channel, amount, diskon_nota, biaya_lainnya,
+            total_amount, selisih, status_pesanan, payment, reseller, users,created_at,updated_at
+          ) VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, 'SHOPEE', 'SHOPEE', ?, 0, 0, ?, 0, 'SELESAI', 'PAID', '-', 'ADMIN',?,?)`,
+        [
+          tanggal_skrg,
+          listData.batas_kirim,
+          listData.cod,
+          listData.jasa_kirim,
+          listData.resi,
+          id_invoice,
+          listData.id_pesanan,
+          listData.id_store,
+          listData.amount,
+          listData.amount,
+          tanggal,
+          tanggal
+        ]
+      );
+
+      // Generate unique id_nota for this iteration
+      const curr_id_nota = "EXT-" + String(last_nota_number++).padStart(7, "0");
+
+      // Insert setiap item detail ke tb_order, tb_notabarang, tb_mutasistock
+      for (const detail of detailRows) {
+        // Get supplier info
+        let get_supp = [];
+        if (detail.id_ware) {
+          [get_supp] = await connection.query(
+            `SELECT * FROM tb_supplier WHERE id_sup=?`, [detail.id_ware]
+          );
+        }
+        // Generate id_mutasi
+        const id_mutasi = 'MT-' + String(Math.floor(Math.random() * 100000000)).padStart(8, "0");
+
+        const [cek_warehouse] = await connection.query(
+          `SELECT id_store FROM tb_store WHERE ip LIKE ?`,
+          [`%${detail.id_store}%`]
+        );
+
+        const [cek_supplier] = await connection.query(
+          `SELECT id_sup FROM tb_supplier WHERE supplier = ?`,
+          [detail.id_ware]
+        );
+
+        await connection.query(
+          `INSERT INTO tb_order (
+      tanggal_order, id_pesanan, id_store, id_brand, id_produk, source, img,
+      id_ware, idpo, quality, produk, size, qty, m_price, selling_price,
+      diskon_item, subtotal, users, acc, created_at, updated_at
+    ) VALUES (?, ?, ?, '-', ?, ?, ?, ?, ?, '-', ?, ?, ?, ?, ?, 0, ?, 'ADMIN', ?, ?, ?)`,
+          [
+            tanggal_skrg,
+            detail.id_pesanan,
+            cek_warehouse[0].id_store,
+            curr_id_nota,
+            detail.source,
+            detail.img,
+            "EXTERNAL",
+            curr_id_nota,
+            detail.produk,
+            detail.size,
+            detail.qty,
+            detail.m_price,
+            detail.selling_price,
+            detail.subtotal,
+            detail.acc, // <== INI HARUS ADA jika ingin isi acc
+            tanggal,
+            tanggal
+          ]
+        );
+
+        await connection.query(
+          `INSERT INTO tb_notabarang
+      (id_nota, id_ware, id_brand, id_category, id_sup, tanggal_upload, produk, size, qty, deskripsi, quality, status_pesanan, m_price, selling_price, payment, img, users, created_at, updated_at)
+      VALUES (?, 'EXTERNAL', '-', '-', ?, ?, ?, ?, ?, ?, '-', 'SELESAI', ?, ?, ?, 'box.png', ?, ?, ?)`,
+          [
+            curr_id_nota,
+            cek_supplier[0].id_sup,
+            tanggal_skrg,
+            detail.produk,
+            detail.size,
+            detail.qty,
+            `${detail.id_pesanan} - ${listData.id_store} -SALES`,
+            detail.m_price,
+            detail.m_price,
+            'PAID',
+            'ADMIN',
+            tanggal,
+            tanggal
+          ]
+        );
+
+        await connection.query(
+          `INSERT INTO tb_mutasistock
+      (id_mutasi, tanggal, id_pesanan, id_ware, id_store, id_produk, produk, id_po, size, qty, source, id_sup, mutasi, users, created_at, updated_at)
+      VALUES (?, ?, ?, 'EXTERNAL', ?, ?, ?, ?, ?, ?, 'Barang Luar', ?, 'SALES ONLINE', ?, ?, ?)`,
+          [
+            id_mutasi,
+            tanggal_skrg,
+            detail.id_pesanan,
+            cek_warehouse[0].id_store,
+            curr_id_nota,
+            detail.produk,
+            curr_id_nota,
+            detail.size,
+            detail.qty,
+            get_supp[0]?.supplier || '-',
+            'ADMIN',
+            tanggal,
+            tanggal
+          ]
+        );
+      }
+    }
+    // Hapus data dari tb_list_detail dan tb_list berdasarkan id_pesanan dari body
+    const idList = body.map(item => item.id_pesanan);
+    if (idList.length > 0) {
+      await connection.query(
+        `DELETE FROM tb_list_detail WHERE id_pesanan IN (${idList.map(() => '?').join(',')})`,
+        idList
+      );
+      await connection.query(
+        `DELETE FROM tb_list WHERE id_pesanan IN (${idList.map(() => '?').join(',')})`,
+        idList
+      );
+    }
+    // End new logic
+
+    await connection.commit();
+    await connection.release();
+
+    return {
+      "result": "success",
+      "message": "Data berhasil diproses",
+    };
+  } catch (error) {
+    console.log(error);
+    await connection.rollback();
+    await connection.release();
+    return { result: "error", message: error.message };
+  }
+};
+
 module.exports = {
   getKaryawan,
   getStore,
@@ -2082,4 +2702,17 @@ module.exports = {
   login_on_enter,
   histories_recap,
   getHistoryDetail,
+  getlistbelanja,
+  inputlistbelanja,
+  updatesupplier,
+  updatemprice_listbelanja,
+  updateacc_listbelanja,
+  updateresi,
+  updatestatus,
+  deletemassal_listbelanja,
+  addparameter,
+  getparameter,
+  editparameter,
+  deleteparameter,
+  insertmassal,
 };

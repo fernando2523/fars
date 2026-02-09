@@ -80,5 +80,19 @@ router.post("/getprintsales", controller.getprintsales);
 router.post("/histories_recap", controller.histories_recap);
 router.post("/getHistoryDetail", controller.getHistoryDetail);
 
+router.post("/getlistbelanja", controller.getlistbelanja);
+router.post("/inputlistbelanja", controller.inputlistbelanja);
+router.post("/updatesupplier", controller.updatesupplier);
+router.post("/updatestatus", controller.updatestatus);
+router.post("/updatemprice_listbelanja", controller.updatemprice_listbelanja);
+router.post("/updateacc_listbelanja", controller.updateacc_listbelanja);
+router.post("/updateresi", controller.updateresi);
+router.post("/deletemassal_listbelanja", controller.deletemassal_listbelanja);
+router.post("/addparameter", controller.addparameter);
+router.get("/getparameter", controller.getparameter);
+router.post("/editparameter", controller.editparameter);
+router.post("/deleteparameter", controller.deleteparameter);
+router.post("/insertmassal", controller.insertmassal);
+
 
 module.exports = router;

@@ -95,6 +95,7 @@ export default function Store() {
     setValue("channel", "");
     resetField("store");
     resetField("alamat");
+    resetField("ip");
     setShowModal(false);
   };
 
@@ -105,6 +106,7 @@ export default function Store() {
     store: any,
     channel: any,
     address: any,
+    ip: any,
     index: number
   ) {
     setid(id);
@@ -115,6 +117,7 @@ export default function Store() {
     setValue("edit_alamat", address);
     setValue("edit_id_ware", id_ware);
     setValue("edit_id_area", id_area);
+    setValue("edit_ip", ip);
     seteditModal(true);
   }
 
@@ -176,6 +179,7 @@ export default function Store() {
         store: data_store.store,
         channel: data_store.channel,
         address: data_store.address,
+        ip: data_store.ip,
         action: (
           <div className="flex flex-warp gap-4">
             <button
@@ -188,6 +192,7 @@ export default function Store() {
                   data_store.store,
                   data_store.channel,
                   data_store.address,
+                  data_store.ip,
                   index
                 )
               }
@@ -257,6 +262,10 @@ export default function Store() {
       selector: (row: { address: any }) => row.address,
     },
     {
+      name: "Ip",
+      selector: (row: { ip: any }) => row.ip,
+    },
+    {
       name: "Action",
       selector: (row: { action: any }) => row.action,
     },
@@ -299,11 +308,13 @@ export default function Store() {
       store: "",
       alamat: "",
       channel: "",
+      ip: "",
       edit_store: "",
       edit_alamat: "",
       edit_channel: "",
       edit_id_ware: "",
       edit_id_area: "",
+      edit_ip: "",
     },
   });
 
@@ -316,7 +327,7 @@ export default function Store() {
   }: any) => (
     <div className="bg-white border-t px-3 py-2 flex flex-wrap justify-start h-14 items-center">
       <div className="grow">
-        Menampilkan {String(currentPage)}-{String(Math.ceil(rowCount / 20))}{" "}
+        Menampilkan {String(currentPage)}-{String(Math.ceil(rowCount / 50))}{" "}
         dari {String(rowCount)} items
       </div>
 
@@ -387,7 +398,7 @@ export default function Store() {
           data={filteredItems}
           pagination
           paginationComponent={CustomMaterialPagination}
-          paginationPerPage={20}
+          paginationPerPage={50}
         />
       </div>
 
@@ -412,7 +423,7 @@ export default function Store() {
                       </label>
                       <select
                         className={`${errors.id_area ? "border-red-500 border-2" : "border"
-                          } h - [45px]  w - [100 %] pr - 3 pl - 5  text - gray - 700 focus: outline - none rounded - lg`}
+                          } h-[45px]  w-[100 %] pr-3 pl-5  text-gray-700 focus:outline-none rounded-lg`}
                         {...register("id_area", { required: true })}
                       >
                         <option value="">Pilih Area Warehouse</option>
@@ -430,7 +441,7 @@ export default function Store() {
                       </label>
                       <select
                         className={`${errors.id_ware ? "border-red-500 border-2" : "border"
-                          } h - [45px]  w - [100 %] pr - 3 pl - 5  text - gray - 700 focus: outline - none rounded - lg`}
+                          } h-[45px]  w-[100 %] pr-3 pl-5  text-gray-700 focus:outline-none rounded-lg`}
                         {...register("id_ware", { required: true })}
                       >
                         <option value="">Pilih Warehouse</option>
@@ -448,11 +459,12 @@ export default function Store() {
                       </label>
                       <select
                         className={`${errors.channel ? "border-red-500 border-2" : "border"
-                          } h - [45px]  w - [100 %] pr - 3 pl - 5  text - gray - 700 focus: outline - none rounded - lg`}
+                          } h-[45px]  w-[100 %] pr-3 pl-5  text-gray-700 focus:outline-none rounded-lg`}
                         {...register("channel", { required: true })}
                       >
                         <option value="">Pilih Channel</option>
                         <option value="SHOPEE">SHOPEE</option>
+                        <option value="TIKTOK">TIKTOK</option>
                         <option value="TOKOPEDIA">TOKOPEDIA</option>
                         <option value="BLIBLI">BLIBLI</option>
                         <option value="LAZADA">LAZADA</option>
@@ -470,7 +482,7 @@ export default function Store() {
                       </label>
                       <input
                         className={`${errors.store ? "border-red-500 border-2" : "border"
-                          } h - [45px]  w - [100 %] pr - 3 pl - 5  text - gray - 700 focus: outline - none rounded - lg`}
+                          } h-[45px]  w-[100 %] pr-3 pl-5  text-gray-700 focus:outline-none rounded-lg`}
                         type="text"
                         placeholder="Masukan Store"
                         // ref={req_store}
@@ -489,7 +501,7 @@ export default function Store() {
                       </label>
                       <input
                         className={`${errors.alamat ? "border-red-500 border-2" : "border"
-                          } h - [45px]  w - [100 %] pr - 3 pl - 5  text - gray - 700 focus: outline - none rounded - lg`}
+                          } h-[45px]  w-[100 %] pr-3 pl-5  text-gray-700 focus:outline-none rounded-lg`}
                         type="text"
                         placeholder="Masukan Alamat"
                         // ref={req_Alamat}
@@ -497,6 +509,26 @@ export default function Store() {
                         {...register("alamat", { required: true })}
                       />
                       {errors.alamat && (
+                        <div className="mt-1 text-sm italic">
+                          This field is required
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-6">
+                      <label className="block mb-2 text-sm font-medium text-black">
+                        IP Marketplace
+                      </label>
+                      <input
+                        className={`${errors.ip ? "border-red-500 border-2" : "border"
+                          } h-[45px]  w-[100 %] pr-3 pl-5  text-gray-700 focus:outline-none rounded-lg`}
+                        type="text"
+                        placeholder="Masukan ip"
+                        // ref={req_ip}
+                        defaultValue=""
+                        {...register("ip", { required: true })}
+                      />
+                      {errors.ip && (
                         <div className="mt-1 text-sm italic">
                           This field is required
                         </div>
@@ -558,7 +590,7 @@ export default function Store() {
                           className={`${errors.edit_id_area
                             ? "border-red-500 border-2"
                             : "border"
-                            } h - [45px]  w - [100 %] pr - 3 pl - 5  text - gray - 700 focus: outline - none rounded - lg`}
+                            } h-[45px]  w-[100 %] pr-3 pl-5  text-gray-700 focus:outline-none rounded-lg`}
                           {...register("edit_id_area", { required: true })}
                         >
                           <option value="">Pilih Area Warehouse</option>
@@ -578,7 +610,7 @@ export default function Store() {
                           className={`${errors.edit_id_ware
                             ? "border-red-500 border-2"
                             : "border"
-                            } h - [45px]  w - [100 %] pr - 3 pl - 5  text - gray - 700 focus: outline - none rounded - lg`}
+                            } h-[45px]  w-[100 %] pr-3 pl-5  text-gray-700 focus:outline-none rounded-lg`}
                           {...register("edit_id_ware", { required: true })}
                         >
                           <option value="">Pilih Warehouse</option>
@@ -597,7 +629,7 @@ export default function Store() {
                         className={`${errors.edit_store
                           ? "border-red-500 border-2"
                           : "border"
-                          } h - [45px]  w - [100 %] pr - 3 pl - 5  text - gray - 700 focus: outline - none rounded - lg`}
+                          } h-[45px]  w-[100 %] pr-3 pl-5  text-gray-700 focus:outline-none rounded-lg`}
                         type="text"
                         placeholder="Masukan Store"
                         // ref={req_Warehouse}
@@ -617,7 +649,7 @@ export default function Store() {
                         className={`${errors.edit_channel
                           ? "border-red-500 border-2"
                           : "border"
-                          } h - [45px]  w - [100 %] pr - 3 pl - 5  text - gray - 700 focus: outline - none rounded - lg`}
+                          } h-[45px]  w-[100 %] pr-3 pl-5  text-gray-700 focus:outline-none rounded-lg`}
                         {...register("edit_channel", { required: true })}
                       >
                         <option value="">Pilih Channel</option>
@@ -641,13 +673,33 @@ export default function Store() {
                         className={`${errors.edit_alamat
                           ? "border-red-500 border-2"
                           : "border"
-                          } h - [45px]  w - [100 %] pr - 3 pl - 5  text - gray - 700 focus: outline - none rounded - lg`}
+                          } h-[45px]  w-[100 %] pr-3 pl-5  text-gray-700 focus:outline-none rounded-lg`}
                         type="text"
                         placeholder="Masukan Alamat"
                         // ref={req_Alamat}
                         {...register("edit_alamat", { required: true })}
                       />
                       {errors.edit_alamat && (
+                        <div className="mt-1 text-sm italic">
+                          This field is required
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-6">
+                      <label className="block mb-2 text-sm font-medium text-black">
+                        IP Marketplace
+                      </label>
+                      <input
+                        className={`${errors.edit_ip
+                          ? "border-red-500 border-2"
+                          : "border"
+                          } h-[45px]  w-[100 %] pr-3 pl-5  text-gray-700 focus:outline-none rounded-lg`}
+                        type="text"
+                        placeholder="Masukan Ip Marketplace"
+                        // ref={req_Alamat}
+                        {...register("edit_ip", { required: true })}
+                      />
+                      {errors.edit_ip && (
                         <div className="mt-1 text-sm italic">
                           This field is required
                         </div>

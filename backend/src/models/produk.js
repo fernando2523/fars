@@ -10,249 +10,6 @@ const tanggalinput = date.format(new Date(), "YYYYMMDD");
 const tahun = date.format(new Date(), "YY");
 const { generateFromEmail } = require("unique-username-generator");
 
-// const getProduk = async (body) => {
-//     const connection = await dbPool.getConnection();
-//     try {
-//         await connection.beginTransaction();
-//         const tanggal = date.format(new Date(), "YYYY/MM/DD HH:mm:ss");
-//         const tanggal_skrg = date.format(new Date(), "YYYY-MM-DD");
-//         const tahun = date.format(new Date(), "YY");
-//         console.log("body produk ini", body);
-
-//         /** 
-//          * 1. Setup variabel awal dan filter dinamis 
-//          */
-//         let whereClauses = [];
-//         let output_area_ware = null;
-//         let areas;
-
-//         // Penentuan 'areas' berdasarkan role
-//         if (body.role === "SUPER-ADMIN" || body.role === "HEAD-AREA") {
-//             areas = body.area;
-//         } else if (body.role === "HEAD-WAREHOUSE") {
-//             const [cek_area] = await connection.query(
-//                 `SELECT id_area FROM tb_warehouse WHERE id_ware=? GROUP BY id_area`,
-//                 [body.area]
-//             );
-//             areas = cek_area[0]?.id_area;
-//         } else {
-//             const [cek_area] = await connection.query(`SELECT id_area FROM tb_store LIMIT 1`);
-//             areas = cek_area[0]?.id_area;
-//         }
-
-//         // Hitung nilai limit (loadmorelimit)
-//         let limitss =
-//             body.loadmorelimit === 1
-//                 ? 20
-//                 : body.loadmorelimit === 0
-//                     ? 0
-//                     : body.loadmorelimit * 20;
-
-//         // Jika id_ware = "all_area", tentukan output_area_ware
-//         if (body.id_ware === "all_area") {
-//             const areaPrefix = body.area.split("-")[0];
-//             if (areaPrefix === "WARE") {
-//                 const [data_get_ware] = await connection.query(
-//                     `SELECT id_area FROM tb_warehouse WHERE id_ware=? GROUP BY id_area`,
-//                     [body.area]
-//                 );
-//                 output_area_ware = data_get_ware[0]?.id_area;
-//             } else if (areaPrefix === "AREA") {
-//                 output_area_ware = body.area;
-//             }
-//         }
-
-//         // Filter pencarian (query)
-//         if (body.query !== "all") {
-//             whereClauses.push(
-//                 `(tb_produk.produk LIKE '%${body.query}%' OR tb_produk.id_produk LIKE '%${body.query}%')`
-//             );
-//         }
-
-//         // Filter berdasarkan id_ware
-//         if (body.id_ware === "all") {
-//             // Tidak menambahkan filter khusus untuk id_ware
-//         } else if (body.id_ware === "all_area") {
-//             // Jika brand tidak "all", gunakan filter brand (id_area = body.brand)
-//             if (body.brand !== "all") {
-//                 whereClauses.push(`tb_variation.id_area = '${body.brand}'`);
-//             } else {
-//                 whereClauses.push(`tb_variation.id_area = '${output_area_ware}'`);
-//             }
-//         } else {
-//             whereClauses.push(`tb_produk.id_ware = '${body.id_ware}'`);
-//         }
-
-//         // Tambahan filter berdasarkan brand apabila id_ware bukan "all_area"
-//         if (body.brand !== "all" && body.id_ware !== "all_area") {
-//             whereClauses.push(`tb_variation.id_area = '${body.brand}'`);
-//         }
-
-//         // Urutan (sorting)
-//         let orderBy = "";
-//         if (body.urutan === "all") {
-//             orderBy = "tb_produk.id DESC";
-//         } else if (body.urutan === "desc") {
-//             orderBy = "SUM(tb_variation.qty) DESC";
-//         } else {
-//             orderBy = "SUM(tb_variation.qty) ASC";
-//         }
-
-//         /**
-//          * 2. Membangun query utama secara dinamis
-//          */
-//         let baseQuery = `
-//         SELECT tb_produk.*
-//         FROM tb_produk
-//         LEFT JOIN tb_variation ON tb_produk.id_produk = tb_variation.id_produk 
-//           AND tb_produk.id_ware = tb_variation.id_ware
-//       `;
-//         if (whereClauses.length > 0) {
-//             baseQuery += " WHERE " + whereClauses.join(" AND ");
-//         }
-//         baseQuery += " GROUP BY tb_produk.id_produk, tb_produk.id_ware";
-
-//         // Jika sedang search, jangan batasi hasil dengan LIMIT
-//         if (body.query !== "all") {
-//             baseQuery += ` ORDER BY ${orderBy}`;
-//         } else {
-//             baseQuery += ` ORDER BY ${orderBy} LIMIT 20 OFFSET ${limitss}`;
-//         }
-
-//         const [data_produk] = await connection.query(baseQuery);
-
-//         /**
-//          * 3. Menghitung total produk dan jumlah qty (sum_artikel) 
-//          *    dengan query yang mengacu pada filter yang sama
-//          */
-//         let countQuery = `
-//         SELECT COUNT(DISTINCT tb_produk.id_produk) as totals
-//         FROM tb_produk
-//         LEFT JOIN tb_variation ON tb_produk.id_produk = tb_variation.id_produk 
-//           AND tb_produk.id_ware = tb_variation.id_ware
-//       `;
-//         if (whereClauses.length > 0) {
-//             countQuery += " WHERE " + whereClauses.join(" AND ");
-//         }
-//         const [totalCountResult] = await connection.query(countQuery);
-//         const total_artikel = totalCountResult.length ? totalCountResult[0].totals : 0;
-//         const total_pages = Math.round(total_artikel / 20);
-
-//         let sumQuery = `
-//         SELECT SUM(tb_variation.qty) as sumqty
-//         FROM tb_variation
-//         LEFT JOIN tb_produk ON tb_produk.id_produk = tb_variation.id_produk 
-//           AND tb_produk.id_ware = tb_variation.id_ware
-//       `;
-//         if (whereClauses.length > 0) {
-//             sumQuery += " WHERE " + whereClauses.join(" AND ");
-//         }
-//         const [sumResult] = await connection.query(sumQuery);
-//         const sum_artikel = sumResult[0]?.sumqty || 0;
-
-//         /**
-//          * 4. Memproses tiap produk untuk mengambil detail-detail terkait
-//          */
-//         const datas = [];
-//         for (let index = 0; index < data_produk.length; index++) {
-//             const produkItem = data_produk[index];
-
-//             const [details] = await connection.query(
-//                 `SELECT *, SUM(qty) as qty, COUNT(size) as totalqty 
-//            FROM tb_variation 
-//            WHERE id_produk=? AND id_ware=? 
-//            GROUP BY id_ware`,
-//                 [produkItem.id_produk, produkItem.id_ware]
-//             );
-//             const countqty = details[0]?.qty || 0;
-
-//             const [detail_variation] = await connection.query(
-//                 `SELECT tb_variation.*, SUM(tb_variation.qty) as qty, displays.size as sizes, 
-//                   displays.qty as qtyss, displays.id_ware as id_waress 
-//            FROM tb_variation 
-//            LEFT JOIN displays ON tb_variation.id_produk = displays.id_produk 
-//            WHERE tb_variation.id_produk=? AND tb_variation.id_ware=? 
-//            GROUP BY tb_variation.id_ware, tb_variation.size 
-//            ORDER BY tb_variation.id ASC`,
-//                 [produkItem.id_produk, produkItem.id_ware]
-//             );
-
-//             const [data_category] = await connection.query(
-//                 `SELECT category FROM tb_category WHERE id_category=?`,
-//                 [produkItem.id_category]
-//             );
-
-//             const [data_warehouse] = await connection.query(
-//                 `SELECT tb_warehouse.id_ware, tb_warehouse.warehouse
-//            FROM tb_warehouse 
-//            LEFT JOIN tb_store ON tb_store.id_ware = tb_warehouse.id_ware 
-//            WHERE tb_warehouse.id_ware=?`,
-//                 [produkItem.id_ware]
-//             );
-
-//             const [data_brand] = await connection.query(
-//                 `SELECT brand FROM tb_brand WHERE id_brand=?`,
-//                 [produkItem.id_brand]
-//             );
-
-//             const [data_area] = await connection.query(
-//                 `SELECT tb_area.*, tb_warehouse.id_area, id_ware 
-//            FROM tb_area 
-//            LEFT JOIN tb_warehouse ON tb_area.id_area = tb_warehouse.id_area 
-//            WHERE tb_warehouse.id_ware=?`,
-//                 [produkItem.id_ware]
-//             );
-
-//             datas.push({
-//                 id: produkItem.id,
-//                 id_produk: produkItem.id_produk,
-//                 id_ware: produkItem.id_ware,
-//                 id_brand: produkItem.id_brand,
-//                 id_category: produkItem.id_category,
-//                 tanggal_upload: produkItem.tanggal_upload,
-//                 produk: produkItem.produk,
-//                 deskripsi: produkItem.deskripsi,
-//                 quality: produkItem.quality,
-//                 n_price: produkItem.n_price,
-//                 r_price: produkItem.r_price,
-//                 g_price: produkItem.g_price,
-//                 img: produkItem.img,
-//                 users: produkItem.users,
-//                 created_at: produkItem.created_at,
-//                 updated_at: produkItem.updated_at,
-//                 countqty: countqty,
-//                 detail_variation: detail_variation,
-//                 category: data_category,
-//                 warehouse: data_warehouse,
-//                 brand: data_brand,
-//                 // Jika detail_variation tidak kosong, ambil value dari baris pertama
-//                 sizes: detail_variation.length ? detail_variation[0].sizes : null,
-//                 qtyss: detail_variation.length ? detail_variation[0].qtyss : null,
-//                 id_waress: detail_variation.length ? detail_variation[0].id_waress : null,
-//                 upprice_n_price: data_area[0]?.n_price,
-//                 upprice_r_price: data_area[0]?.r_price,
-//                 upprice_g_price: data_area[0]?.g_price,
-//                 no_urut: total_artikel,
-//             });
-//         }
-
-//         await connection.commit();
-//         connection.release();
-
-//         return {
-//             datas,
-//             total_artikel,
-//             sum_artikel,
-//             total_pages,
-//             show_page: limitss,
-//         };
-//     } catch (error) {
-//         console.error(error);
-//         await connection.release();
-//         throw error;
-//     }
-// };
-
 const getProduk = async (body) => {
     const connection = await dbPool.getConnection();
     try {
@@ -372,15 +129,19 @@ const getProduk = async (body) => {
          *    dengan query yang mengacu pada filter yang sama
          */
         let countQuery = `
-        SELECT COUNT(*) AS totals
+            SELECT COUNT(*) AS totals
             FROM (
                 SELECT tb_produk.id_produk, tb_produk.id_ware
                 FROM tb_produk
                 LEFT JOIN tb_variation
                     ON tb_produk.id_produk = tb_variation.id_produk
                     AND tb_produk.id_ware = tb_variation.id_ware
-                ${productFilters.length ? "WHERE " + productFilters.join(" AND ") : ""}
-                GROUP BY tb_produk.id_produk, tb_produk.id_ware
+                ${productFilters.length
+                ? "WHERE " + productFilters.join(" AND ") + " AND "
+                : "WHERE "
+            }
+                tb_produk.produk NOT REGEXP 'PaperBag|Double Box|Kaos Kaki'
+                GROUP BY tb_produk.id_produk
             ) x
         `;
 
@@ -389,13 +150,17 @@ const getProduk = async (body) => {
         const total_pages = Math.ceil(total_artikel / limit);
 
         let sumQuery = `
-        SELECT SUM(tb_variation.qty) AS sumqty
-        FROM tb_produk
-        ${variationFilters.length ? "JOIN" : "LEFT JOIN"} tb_variation
-            ON tb_produk.id_produk = tb_variation.id_produk
-            AND tb_produk.id_ware = tb_variation.id_ware
-            ${variationFilters.length ? "AND " + variationFilters.join(" AND ") : ""}
-        ${productFilters.length ? "WHERE " + productFilters.join(" AND ") : ""}
+            SELECT SUM(tb_variation.qty) AS sumqty
+            FROM tb_produk
+            ${variationFilters.length ? "JOIN" : "LEFT JOIN"} tb_variation
+                ON tb_produk.id_produk = tb_variation.id_produk
+                AND tb_produk.id_ware = tb_variation.id_ware
+                ${variationFilters.length ? "AND " + variationFilters.join(" AND ") : ""}
+            ${productFilters.length
+                ? "WHERE " + productFilters.join(" AND ") + " AND "
+                : "WHERE "
+            }
+            tb_produk.produk NOT REGEXP 'PaperBag|Double Box|Kaos Kaki'
         `;
 
 
@@ -1033,7 +798,7 @@ const addProduk = async (data, img) => {
         }
 
         const [data_wares] = await connection.query(
-            `SELECT * FROM tb_warehouse WHERE id_ware != 'EXTERNAL'`
+            `SELECT * FROM tb_warehouse WHERE id_ware != 'EXTERNAL' AND id_cat='${data.kategori}'`
         );
 
         const [data_sup] = await connection.query(

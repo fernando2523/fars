@@ -18,15 +18,15 @@ import axios from "axios";
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function Warehouse() {
-  const [date, setDate] = useState(format(new Date(), "dd/MM/yyyy"));
-
   const [isLoading, setisLoading]: any = useState(true);
   const [data_ware, setdatawarehouse] = useState([]);
   const [data_area, setdataarea] = useState([]);
+  const [data_category, setdatacategory] = useState([]);
 
   useEffect(() => {
     loaddatawarehouse();
     getstore_area();
+    getcategory();
   }, []);
 
   async function loaddatawarehouse() {
@@ -38,11 +38,35 @@ export default function Warehouse() {
       .then(function (response) {
         setdatawarehouse(response.data.data_warehouse);
         setisLoading(false);
-        // console.log(response.data.data_warehouse);
       })
       .catch(function (error) {
         console.log(error);
       });
+  }
+
+  async function getcategory() {
+    setisLoading(true);
+    await axios({
+      method: "get",
+      url: `${process.env.NEXT_PUBLIC_HOST}/v1/getcategory`,
+    })
+      .then(function (response) {
+        setdatacategory(response.data.data_category);
+        setisLoading(false);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  }
+  const list_category: any = [];
+  if (!isLoading) {
+    data_category.map((area: any, index: number) => {
+      list_category.push(
+        <option key={index} value={area.id_category}>
+          {area.category}
+        </option>
+      );
+    });
   }
 
   const onSubmit = async (data: any) => {
@@ -85,6 +109,7 @@ export default function Warehouse() {
     id_area: any,
     warehouse: any,
     address: any,
+    id_cat: any,
     index: number
   ) {
     setid(id);
@@ -93,6 +118,7 @@ export default function Warehouse() {
     setValue("edit_warehouse", warehouse);
     setValue("edit_alamat", address);
     setValue("edit_id_area", id_area);
+    setValue("edit_category", id_cat);
     seteditModal(true);
   }
 
@@ -100,7 +126,6 @@ export default function Warehouse() {
     await axios
       .post(`${process.env.NEXT_PUBLIC_HOST}/v1/editwarehouse`, { data, id })
       .then(function (response) {
-        console.log(response.data);
         loaddatawarehouse();
       });
 
@@ -152,6 +177,7 @@ export default function Warehouse() {
         id_area: data_ware.id_area,
         warehouse: data_ware.warehouse,
         alamat: data_ware.address,
+        id_cat: data_ware.id_cat,
         action: (
           <div className="flex flex-warp gap-4">
             <button
@@ -162,8 +188,10 @@ export default function Warehouse() {
                   data_ware.id_area,
                   data_ware.warehouse,
                   data_ware.address,
+                  data_ware.id_cat,
                   index
                 )
+
               }
             >
               <i className="fi fi-rr-edit text-center text-xl"></i>
@@ -206,9 +234,11 @@ export default function Warehouse() {
       id_area: "",
       warehouse: "",
       alamat: "",
+      category: "",
       edit_warehouse: "",
       edit_alamat: "",
       edit_id_area: "",
+      edit_category: "",
     },
   });
 
@@ -358,7 +388,7 @@ export default function Warehouse() {
                       </label>
                       <select
                         className={`${errors.id_area ? "border-red-500 border-2" : "border"
-                          } h - [45px]  w - [100 %] pr - 3 pl - 5  text - gray - 700 focus: outline - none rounded - lg`}
+                          } h-[45px]  w-[100 %] pr-3 pl-5  text-gray 700 focus:outline-none rounded-lg`}
                         {...register("id_area", { required: true })}
                       >
                         <option value="">Pilih Area Warehouse</option>
@@ -378,7 +408,7 @@ export default function Warehouse() {
                         className={`${errors.warehouse
                           ? "border-red-500 border-2"
                           : "border"
-                          } h - [45px]  w - [100 %] pr - 3 pl - 5  text - gray - 700 focus: outline - none rounded - lg`}
+                          } h-[45px]  w-[100 %] pr-3 pl-5  text-gray 700 focus:outline-none rounded-lg`}
                         type="text"
                         placeholder="Masukan Warehouse"
                         defaultValue=""
@@ -396,7 +426,7 @@ export default function Warehouse() {
                       </label>
                       <input
                         className={`${errors.alamat ? "border-red-500 border-2" : "border"
-                          } h - [45px]  w - [100 %] pr - 3 pl - 5  text - gray - 700 focus: outline - none rounded - lg`}
+                          } h-[45px]  w-[100 %] pr-3 pl-5  text-gray 700 focus:outline-none rounded-lg`}
                         type="text"
                         placeholder="Masukan Alamat"
                         // ref={req_Alamat}
@@ -404,6 +434,25 @@ export default function Warehouse() {
                         {...register("alamat", { required: true })}
                       />
                       {errors.alamat && (
+                        <div className="mt-1 text-sm italic">
+                          This field is required
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-6">
+                      <label className="block mb-2 text-sm font-medium text-black">
+                        Category
+                      </label>
+                      <select
+                        className={`${errors.category ? "border-red-500 border-2" : "border"
+                          } h-[45px]  w-[100%] pr-3 pl-5  text-gray 700 focus:outline-none rounded-lg`}
+                        {...register("category", { required: true })}
+                      >
+                        <option value="">Pilih Category</option>
+                        {list_category}
+                      </select>
+                      {errors.category && (
                         <div className="mt-1 text-sm italic">
                           This field is required
                         </div>
@@ -464,7 +513,7 @@ export default function Warehouse() {
                         className={`${errors.edit_id_area
                           ? "border-red-500 border-2"
                           : "border"
-                          } h - [45px]  w - [100 %] pr - 3 pl - 5  text - gray - 700 focus: outline - none rounded - lg`}
+                          } h-[45px]  w-[100 %] pr-3 pl-5  text-gray 700 focus:outline-none rounded-lg`}
                         {...register("edit_id_area", { required: true })}
                       >
                         <option value="">Pilih Area Warehouse</option>
@@ -484,7 +533,7 @@ export default function Warehouse() {
                         className={`${errors.edit_warehouse
                           ? "border-red-500 border-2"
                           : "border"
-                          } h - [45px]  w - [100 %] pr - 3 pl - 5  text - gray - 700 focus: outline - none rounded - lg`}
+                          } h-[45px]  w-[100 %] pr-3 pl-5  text-gray 700 focus:outline-none rounded-lg`}
                         type="text"
                         placeholder="Masukan Warehouse"
                         // ref={req_Warehouse}
@@ -504,13 +553,34 @@ export default function Warehouse() {
                         className={`${errors.edit_alamat
                           ? "border-red-500 border-2"
                           : "border"
-                          } h - [45px]  w - [100 %] pr - 3 pl - 5  text - gray - 700 focus: outline - none rounded - lg`}
+                          } h-[45px]  w-[100 %] pr-3 pl-5  text-gray 700 focus:outline-none rounded-lg`}
                         type="text"
                         placeholder="Masukan Alamat"
                         // ref={req_Alamat}
                         {...register("edit_alamat", { required: true })}
                       />
                       {errors.edit_alamat && (
+                        <div className="mt-1 text-sm italic">
+                          This field is required
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="">
+                      <label className="block mb-2 text-sm font-medium text-black mt-5">
+                        Category
+                      </label>
+                      <select
+                        className={`${errors.edit_category
+                          ? "border-red-500 border-2"
+                          : "border"
+                          } h-[45px]  w-[100%] pr-3 pl-5  text-gray 700 focus:outline-none rounded-lg`}
+                        {...register("edit_category", { required: true })}
+                      >
+                        <option value="">Pilih Category</option>
+                        {list_category}
+                      </select>
+                      {errors.edit_category && (
                         <div className="mt-1 text-sm italic">
                           This field is required
                         </div>

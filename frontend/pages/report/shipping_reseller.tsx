@@ -1008,12 +1008,12 @@ export default function Shipping() {
                     key={index2}
                     className={`${data_payment.bank === "CASH"
                       ? "text-lime-600"
-                      : "" || data_payment.bank === "DEBIT"
+                      : data_payment.bank === "DEBIT"
                         ? "text-blue-600"
-                        : "" || data_payment.bank === "QRIS"
+                        : data_payment.bank === "QRIS"
                           ? "text-cyan-600"
                           : ""
-                      }  font-bold ml-5`}
+                      } font-bold ml-5`}
                   >
                     {data_payment.bank} :{" "}
                     {Rupiah.format(data_payment.total_payment)}
