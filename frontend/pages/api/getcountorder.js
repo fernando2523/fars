@@ -6,8 +6,8 @@ export default async function handler(req, res) {
   const request_host = "https://api.ginee.com";
   const { request_uri, params } = req.body;
   const http_method = req.method;
-  const access_key = "64b23c995b8a9a10";
-  const secret_key = "f50456ddaf47733b";
+  const access_key = "24149de32ca192a5";
+  const secret_key = "d06535d93ed71299";
   const connection = await db.getConnection();
 
   const token = await getToken(http_method, request_uri, access_key, secret_key);

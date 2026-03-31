@@ -14,8 +14,8 @@ export default async function handler(req, res) {
 
     console.log("Received batch length:", batch.length);
 
-    const accessKey = "64b23c995b8a9a10";
-    const secretKey = "f50456ddaf47733b";
+    const accessKey = "24149de32ca192a5";
+    const secretKey = "d06535d93ed71299";
 
     // Fungsi delay untuk menunggu
     const delay = ms => new Promise(resolve => setTimeout(resolve, ms));

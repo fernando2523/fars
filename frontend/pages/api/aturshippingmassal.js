@@ -6,8 +6,8 @@ export default async function handler(req, res) {
     const request_uri = req.body.request_uri;
     const http_method = req.method;
     const params = req.body.params; // Assuming you send 'params' in the body
-    const access_key = "64b23c995b8a9a10";
-    const secret_key = "f50456ddaf47733b";
+    const access_key = "24149de32ca192a5";
+    const secret_key = "d06535d93ed71299";
     console.log(params.batch);
 
     try {

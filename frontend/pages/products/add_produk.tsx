@@ -51,7 +51,7 @@ export default function AddProduk() {
   async function getwarehouse(role: any, area: any) {
     await axios({
       method: "post",
-      url: `https://api.epseugroup.com/v1/getwarehouseselected`,
+      url: `https://api.supplysmooth.id/v1/getwarehouseselected`,
       data: {
         role: role,
         store: area,
@@ -85,7 +85,7 @@ export default function AddProduk() {
   async function getbrand(Role: any, area: any) {
     await axios({
       method: "post",
-      url: `https://api.epseugroup.com/v1/getbrandarea`,
+      url: `https://api.supplysmooth.id/v1/getbrandarea`,
       data: {
         role: Role,
         store: area,
@@ -112,7 +112,7 @@ export default function AddProduk() {
   async function gethistoripo() {
     await axios({
       method: "get",
-      url: `https://api.epseugroup.com/v1/gethistoripo`,
+      url: `https://api.supplysmooth.id/v1/gethistoripo`,
     })
       .then(function (response) {
         setdatahistorypo(response.data.result);
@@ -137,7 +137,7 @@ export default function AddProduk() {
   async function gethistoriso() {
     await axios({
       method: "get",
-      url: `https://api.epseugroup.com/v1/gethistoriso`,
+      url: `https://api.supplysmooth.id/v1/gethistoriso`,
     })
       .then(function (response) {
         setdataso(response.data.result);
@@ -163,7 +163,7 @@ export default function AddProduk() {
   async function getcategory() {
     await axios({
       method: "get",
-      url: `https://api.epseugroup.com/v1/getcategory`,
+      url: `https://api.supplysmooth.id/v1/getcategory`,
     })
       .then(function (response) {
         setdatacategory(response.data.data_category);
@@ -186,7 +186,7 @@ export default function AddProduk() {
   async function getsupplier(Role: any, area: any) {
     await axios({
       method: "post",
-      url: `https://api.epseugroup.com/v1/getsupplierarea`,
+      url: `https://api.supplysmooth.id/v1/getsupplierarea`,
       data: {
         role: Role,
         store: area,
@@ -679,7 +679,7 @@ export default function AddProduk() {
     // } else {
     await axios({
       method: "post",
-      url: `https://api.epseugroup.com/v1/addproduk`,
+      url: `https://api.supplysmooth.id/v1/addproduk`,
       headers: {
         "content-type": "multipart/form-data",
       },

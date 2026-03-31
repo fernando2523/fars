@@ -9,8 +9,8 @@ const XLSX = require('xlsx');
 
 // Konstanta Global
 const REQUEST_HOST = "https://api.ginee.com";
-const ACCESS_KEY = "64b23c995b8a9a10";
-const SECRET_KEY = "f50456ddaf47733b";
+const ACCESS_KEY = "24149de32ca192a5";
+const SECRET_KEY = "d06535d93ed71299";
 const MAX_BATCH_SIZE = 100;
 const RATE_LIMIT_DELAY = 5000;
 const MAX_PAGINATION_ITERATIONS = 100; // Batas maksimum iterasi pagination
@@ -320,7 +320,7 @@ async function insertOrdersToDatabase(orders) {
 
         if (result.length > 0) {
             await axios
-                .post(`https://api.epseugroup.com/v1/cekbeforeordermassal`, {
+                .post(`https://api.supplysmooth.id/v1/cekbeforeordermassal`, {
                     result: result,
                 })
                 .then(function (response) {
@@ -401,7 +401,7 @@ async function insertOrdersToDatabase(orders) {
 
                     if (dataQtyReady.length > 0) {
                         axios
-                            .post(`https://api.epseugroup.com/v1/syncordermassal`, {
+                            .post(`https://api.supplysmooth.id/v1/syncordermassal`, {
                                 data: dataQtyReady,
                                 tanggal: tanggal_skrg,
                                 id_store: idstore,
@@ -578,8 +578,8 @@ async function ChangePending(pending) {
     const request_uri = '/openapi/v3/oms/order/sync';
     const http_method = 'POST';
     const params = params_data;
-    const access_key = '64b23c995b8a9a10';
-    const secret_key = 'f50456ddaf47733b';
+    const access_key = '24149de32ca192a5';
+    const secret_key = 'd06535d93ed71299';
 
     // Mendapatkan token otentikasi
     const token = getToken2("POST", "/openapi/v3/oms/order/sync", access_key, secret_key);

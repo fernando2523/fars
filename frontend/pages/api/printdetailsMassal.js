@@ -10,8 +10,8 @@ export default async function handler(req, res) {
     const request_host = "https://api.ginee.com";
     const request_uri = req.body.request_uri;
     const params = req.body.params;
-    const access_key = "64b23c995b8a9a10";
-    const secret_key = "f50456ddaf47733b";
+    const access_key = "24149de32ca192a5";
+    const secret_key = "d06535d93ed71299";
     const maxRetries = 3; // Maksimum percobaan ulang
     const retryDelay = 2000; // Delay antar percobaan ulang (dalam milidetik)
     console.log("cek params-=", params.orderId);

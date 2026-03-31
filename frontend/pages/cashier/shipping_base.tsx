@@ -190,7 +190,7 @@ export default function GetBaseorder() {
   async function getstore() {
     await axios({
       method: "get",
-      url: `https://api.epseugroup.com/v1/getstore_api`,
+      url: `https://api.supplysmooth.id/v1/getstore_api`,
     })
       .then(function (response) {
         setdatastore(response.data.result);
@@ -203,7 +203,7 @@ export default function GetBaseorder() {
   async function getpending() {
     await axios({
       method: "get",
-      url: `https://api.epseugroup.com/v1/getpendingapi`,
+      url: `https://api.supplysmooth.id/v1/getpendingapi`,
     })
       .then(function (response) {
         setdatapending(response.data.result.get_pending);
@@ -230,7 +230,7 @@ export default function GetBaseorder() {
 
       const storeResponse = await axios({
         method: "get",
-        url: `https://api.epseugroup.com/v1/getstore_api`,
+        url: `https://api.supplysmooth.id/v1/getstore_api`,
       });
 
       const storeData = storeResponse.data.result; // Data dari API kedua
@@ -282,7 +282,7 @@ export default function GetBaseorder() {
   async function getbrand(role: any, area: any, Brand: any) {
     await axios({
       method: "post",
-      url: `https://api.epseugroup.com/v1/getstore_sales_online`,
+      url: `https://api.supplysmooth.id/v1/getstore_sales_online`,
       data: {
         role: role,
         store: area,
@@ -359,7 +359,7 @@ export default function GetBaseorder() {
 
     await axios({
       method: "get",
-      url: `https://api.epseugroup.com/v1/get_history_massal`,
+      url: `https://api.supplysmooth.id/v1/get_history_massal`,
     })
       .then(function (response) {
         console.log("Response:", response.data.result);
@@ -1533,7 +1533,7 @@ export default function GetBaseorder() {
     let rowsData: any = [];
 
     try {
-      const response = await axios.post(`https://api.epseugroup.com/v1/cekbeforeordermassal`, {
+      const response = await axios.post(`https://api.supplysmooth.id/v1/cekbeforeordermassal`, {
         result: result,
       });
 
@@ -1646,7 +1646,7 @@ export default function GetBaseorder() {
         }, 1000);
 
         if (dataQtyReady.length > 0) {
-          const syncResponse = await axios.post(`https://api.epseugroup.com/v1/syncordermassal`, {
+          const syncResponse = await axios.post(`https://api.supplysmooth.id/v1/syncordermassal`, {
             data: dataQtyReady,
             tanggal: dateskrg,
             id_store: idstore,
@@ -1839,21 +1839,21 @@ export default function GetBaseorder() {
           console.log("skipHarga.length", skipHarga);
 
           if (skipOrder.length > 0) {
-            await axios.post("https://api.epseugroup.com/v1/insertgagalinput", {
+            await axios.post("https://api.supplysmooth.id/v1/insertgagalinput", {
               data: dataQtyNotReady,
               params: "SKIP_ORDER",
             });
           }
 
           if (skipOrder2.length > 0) {
-            await axios.post("https://api.epseugroup.com/v1/insertgagalinput", {
+            await axios.post("https://api.supplysmooth.id/v1/insertgagalinput", {
               data: skipOrder2,
               params: "SKIP_ORDER2",
             });
           }
 
           if (skipHarga.length > 0) {
-            await axios.post("https://api.epseugroup.com/v1/insertgagalinput", {
+            await axios.post("https://api.supplysmooth.id/v1/insertgagalinput", {
               data: skipHarga,
               params: "SKIP_HARGA",
             });
@@ -2130,7 +2130,7 @@ export default function GetBaseorder() {
     let rowsData: any = [];
 
     try {
-      const response = await axios.post(`https://api.epseugroup.com/v1/cekbeforeordermassal`, {
+      const response = await axios.post(`https://api.supplysmooth.id/v1/cekbeforeordermassal`, {
         result: result,
       });
 
@@ -2241,7 +2241,7 @@ export default function GetBaseorder() {
         }, 1000);
 
         if (dataQtyReady.length > 0) {
-          const syncResponse = await axios.post(`https://api.epseugroup.com/v1/syncordermassal`, {
+          const syncResponse = await axios.post(`https://api.supplysmooth.id/v1/syncordermassal`, {
             data: dataQtyReady,
             tanggal: dateskrg,
             id_store: idstore,
@@ -2433,21 +2433,21 @@ export default function GetBaseorder() {
           // console.log("skipHarga.length", skipHarga);
 
           if (skipOrder.length > 0) {
-            await axios.post("https://api.epseugroup.com/v1/insertgagalinput", {
+            await axios.post("https://api.supplysmooth.id/v1/insertgagalinput", {
               data: dataQtyNotReady,
               params: "SKIP_ORDER",
             });
           }
 
           if (skipOrder2.length > 0) {
-            await axios.post("https://api.epseugroup.com/v1/insertgagalinput", {
+            await axios.post("https://api.supplysmooth.id/v1/insertgagalinput", {
               data: skipOrder2,
               params: "SKIP_ORDER2",
             });
           }
 
           if (skipHarga.length > 0) {
-            await axios.post("https://api.epseugroup.com/v1/insertgagalinput", {
+            await axios.post("https://api.supplysmooth.id/v1/insertgagalinput", {
               data: skipHarga,
               params: "SKIP_HARGA",
             });
@@ -2484,7 +2484,7 @@ export default function GetBaseorder() {
     console.log("shippingInputData", shippingInputData.length);
 
     axios
-      .post("https://api.epseugroup.com/v1/history_massal", shippingInputData)
+      .post("https://api.supplysmooth.id/v1/history_massal", shippingInputData)
       .then(function (response) {
       });
 
@@ -2953,7 +2953,7 @@ export default function GetBaseorder() {
     let datas: any = [];
     await axios({
       method: "get",
-      url: `https://api.epseugroup.com/v1/cek_namaproduk`,
+      url: `https://api.supplysmooth.id/v1/cek_namaproduk`,
     })
       .then(function (response) {
         datas.push(response.data.result);
@@ -3139,7 +3139,7 @@ export default function GetBaseorder() {
 
   const DeletePendingData = async () => {
     try {
-      const response = await axios.delete("https://api.epseugroup.com/v1/deletependingdata");
+      const response = await axios.delete("https://api.supplysmooth.id/v1/deletependingdata");
       console.log("Pending data deleted successfully:", response.data);
 
       toast.success("Pending data deleted successfully!", {
@@ -3183,7 +3183,7 @@ export default function GetBaseorder() {
       )}
       <div className="mb-3">
         <div className="grow content-center font-bold text-2xl pl-2 mb-1">
-          Base Orders
+          API Orders
         </div>
 
         <div className=" flex flex-row mt-0 gap-3 text-black">
@@ -3287,7 +3287,7 @@ export default function GetBaseorder() {
           />
         </div>
 
-        {"SUPER-ADMIN" === Cookies.get("auth_role") ? (
+        {/* {"SUPER-ADMIN" === Cookies.get("auth_role") ? (
           <>
             <div className="flex text-sm flex-row items-center w-[20%] justify-end">
               <select
@@ -3309,7 +3309,7 @@ export default function GetBaseorder() {
               </select>
             </div>
           </>
-        ) : null}
+        ) : null} */}
         {"SUPER-ADMIN" === Cookies.get("auth_role") || "HEAD-AREA" === Cookies.get("auth_role") || "HEAD-WAREHOUSE" === Cookies.get("auth_role") ?
           (
             <>
@@ -3651,7 +3651,7 @@ export default function GetBaseorder() {
                               <div className="grow text-center">
                                 <div className="text-gray-800">
                                   <img
-                                    src={data_order.channelId === "SHOPEE_ID" ? 'https://api.epseugroup.com/public/images/icon_shopee.png' : data_order.channelId === "TIKTOK_ID" ? 'https://api.epseugroup.com/public/images/icon_tiktok.png' : data_order.channelId === "TOKOPEDIA_ID" ? 'https://api.epseugroup.com/public/images/icon_tokopedia.png' : null}
+                                    src={data_order.channelId === "SHOPEE_ID" ? 'https://api.supplysmooth.id/public/images/icon_shopee.png' : data_order.channelId === "TIKTOK_ID" ? 'https://api.supplysmooth.id/public/images/icon_tiktok.png' : data_order.channelId === "TOKOPEDIA_ID" ? 'https://api.supplysmooth.id/public/images/icon_tokopedia.png' : null}
                                     // className="w-7 -mb-5 -mr-5"
                                     className={data_order.channelId === "SHOPEE_ID" ? 'w-7 -mb-5 -mr-5' : data_order.channelId === "TIKTOK_ID" ? 'w-7 -mb-5 -mr-5' : data_order.channelId === "TOKOPEDIA_ID" ? 'w-5 -mb-5 -mr-5' : null}
                                   />

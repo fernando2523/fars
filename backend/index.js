@@ -1,8 +1,7 @@
 require("dotenv").config();
 process.env.TZ = "Asia/Jakarta";
 // const PORT = process.env.PORT || 4000;
-const PORT = 9191;
-// const PORT = 8282;
+const PORT = 8181;
 const express = require("express");
 const cors = require("cors");
 

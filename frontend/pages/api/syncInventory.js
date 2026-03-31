@@ -9,8 +9,8 @@ const XLSX = require('xlsx');
 
 // Konstanta Global
 const REQUEST_HOST = "https://api.ginee.com";
-const ACCESS_KEY = "64b23c995b8a9a10";
-const SECRET_KEY = "f50456ddaf47733b";
+const ACCESS_KEY = "24149de32ca192a5";
+const SECRET_KEY = "d06535d93ed71299";
 const MAX_BATCH_SIZE = 100;
 const RATE_LIMIT_DELAY = 1000;
 const MAX_PAGINATION_ITERATIONS = 100; // Batas maksimum iterasi pagination

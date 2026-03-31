@@ -16,7 +16,7 @@ function backupDatabase() {
     const MYSQLDUMP = process.env.MYSQLDUMP_PATH || 'mysqldump';
 
     // Perintah mysqldump dengan konfigurasi database Anda
-    const backupCommand = `${MYSQLDUMP} -h 139.180.215.133 -u 4media -p"Kintamani1@#$" fars > "${backupFilePath}"`;
+    const backupCommand = `${MYSQLDUMP} -h 139.180.215.133 -u 4media -p"Kintamani1@#$" dummycloth > "${backupFilePath}"`;
 
     exec(backupCommand, (error, stdout, stderr) => {
         if (error) {

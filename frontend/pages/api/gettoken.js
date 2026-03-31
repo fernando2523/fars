@@ -6,8 +6,8 @@ export default async function handler(req, res) {
   var request_uri = req.body.request_uri;
   var http_method = req.method;
   var params = req.body.params;
-  var access_key = '64b23c995b8a9a10';
-  var secret_key = 'f50456ddaf47733b';
+  var access_key = '24149de32ca192a5';
+  var secret_key = 'd06535d93ed71299';
 
   var token = await getToken(http_method, request_uri, access_key, secret_key)
 
