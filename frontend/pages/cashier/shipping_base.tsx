@@ -516,11 +516,8 @@ export default function GetBaseorder() {
               productImageUrl: item.productImageUrl,
               productName: item.productName,
               quantity: item.quantity,
-              spu: vars.channelId === "TIKTOK_ID" || vars.channelId === "TOKOPEDIA_ID"
-                ? item.sku.split(".")[0]
-                : vars.channelId === "SHOPEE_ID"
-                  ? (item.spu === "" || item.spu === null ? item.sku.split(".")[0] : item.spu)
-                  : null,
+              sku: item.masterSku || item.sku,
+              spu: (item.masterSku || item.sku || "").split(".")[0],
             });
           });
           // Update flag morethan jika jumlah items > 1
@@ -565,11 +562,8 @@ export default function GetBaseorder() {
               productImageUrl: item.productImageUrl,
               productName: item.productName,
               quantity: item.quantity,
-              spu: vars.channelId === "TIKTOK_ID" || vars.channelId === "TOKOPEDIA_ID"
-                ? item.sku.split(".")[0]
-                : vars.channelId === "SHOPEE_ID"
-                  ? (item.spu === "" || item.spu === null ? item.sku.split(".")[0] : item.spu)
-                  : null,
+              sku: item.masterSku || item.sku,
+              spu: (item.masterSku || item.sku || "").split(".")[0],
             })),
             morethan: vars.items.length > 1 ? "true" : "false",
           });
@@ -664,11 +658,8 @@ export default function GetBaseorder() {
                       productImageUrl: item.productImageUrl,
                       productName: item.productName,
                       quantity: item.quantity,
-                      spu: vars.channelId === "TIKTOK_ID" || vars.channelId === "TOKOPEDIA_ID"
-                        ? item.sku.split(".")[0]
-                        : vars.channelId === "SHOPEE_ID"
-                          ? (item.spu === "" || item.spu === null ? item.sku.split(".")[0] : item.spu)
-                          : null,
+                      sku: item.masterSku || item.sku,
+                      spu: (item.masterSku || item.sku || "").split(".")[0],
                     })),
                     morethan: vars.items.length > 1 ? "true" : "false", // Tentukan apakah lebih dari 1 item
                   });
@@ -744,11 +735,8 @@ export default function GetBaseorder() {
               productImageUrl: item.productImageUrl,
               productName: item.productName,
               quantity: item.quantity,
-              spu: vars.channelId === "TIKTOK_ID" || vars.channelId === "TOKOPEDIA_ID"
-                ? item.sku.split(".")[0]
-                : vars.channelId === "SHOPEE_ID"
-                  ? (item.spu === "" || item.spu === null ? item.sku.split(".")[0] : item.spu)
-                  : null,
+              sku: item.masterSku || item.sku,
+              spu: (item.masterSku || item.sku || "").split(".")[0],
             });
           });
 
@@ -796,11 +784,8 @@ export default function GetBaseorder() {
               productImageUrl: item.productImageUrl,
               productName: item.productName,
               quantity: item.quantity,
-              spu: vars.channelId === "TIKTOK_ID" || vars.channelId === "TOKOPEDIA_ID"
-                ? item.sku.split(".")[0]
-                : vars.channelId === "SHOPEE_ID"
-                  ? (item.spu === "" || item.spu === null ? item.sku.split(".")[0] : item.spu)
-                  : null,
+              sku: item.masterSku || item.sku,
+              spu: (item.masterSku || item.sku || "").split(".")[0],
             })),
 
             morethan: vars.items.length > 1 ? "true" : "false",
@@ -1341,11 +1326,8 @@ export default function GetBaseorder() {
                   productImageUrl: item.productImageUrl,
                   productName: item.productName,
                   quantity: item.quantity,
-                  spu: vars.channelId === "TIKTOK_ID" || vars.channelId === "TOKOPEDIA_ID"
-                    ? item.sku.split(".")[0]
-                    : vars.channelId === "SHOPEE_ID"
-                      ? (item.spu === "" || item.spu === null ? item.sku.split(".")[0] : item.spu)
-                      : null,
+                  sku: item.masterSku || item.sku,
+                  spu: (item.masterSku || item.sku || "").split(".")[0],
                 })),
                 morethan: vars.items.length > 1 ? "true" : "false", // Tentukan apakah lebih dari 1 item
               });
@@ -1504,11 +1486,12 @@ export default function GetBaseorder() {
 
       // Looping melalui setiap item dalam pesanan
       order.items.forEach((item: any) => {
+        const skuParts = (item.sku || item.spu || "").split(".");
         result.push({
-          id_produk: item.spu,
-          size: item.variationName,
+          id_produk: skuParts[0] || item.spu,
+          size: skuParts[1] || item.variationName,
           id_store: idstore,
-          id_ware: idware,
+          id_ware: skuParts[2] || idware,
           quantity: item.quantity,
           no_pesanan: order.externalOrderId,
           total_amount: order.totalAmount,
@@ -2097,11 +2080,12 @@ export default function GetBaseorder() {
 
       // Looping melalui setiap item dalam pesanan
       order.items.forEach((item: any) => {
+        const skuParts = (item.sku || item.spu || "").split(".");
         result.push({
-          id_produk: item.spu,
-          size: item.variationName,
+          id_produk: skuParts[0] || item.spu,
+          size: skuParts[1] || item.variationName,
           id_store: idstore,
-          id_ware: idware,
+          id_ware: skuParts[2] || idware,
           quantity: item.quantity,
           no_pesanan: order.externalOrderId,
           total_amount: order.totalAmount,

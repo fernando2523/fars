@@ -358,384 +358,194 @@ export default function Expense() {
   async function printAct() {
     // console.log("PrintIDWare", PrintIDWare);
     // console.log("POManual", POManual);
-    if (PrintIDWare != "WARE-0002") {
+    const pdfDoc = await PDFDocument.create();
+    // const pageWidth = 297.6; // 10.5 cm in pt (141.7 * 2.1)
+    const labelWidth = 141.7;
+    const marginLeft = 10;
+    const marginRight = 10;
+    const pageWidth = 2 * (labelWidth + marginLeft + marginRight);
+    // const pageWidth = 148.8; // 10.5 cm in pt (141.7 * 2.1)
+    const pageHeight = 63.75; // 6 cm in pt (85.0 * 2)
+    const availableWidth = labelWidth - marginLeft - marginRight;
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const italicFont = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
 
-      const pdfDoc = await PDFDocument.create();
-      // const pageWidth = 297.6; // 10.5 cm in pt (141.7 * 2.1)
-      const labelWidth = 141.7;
-      const marginLeft = 10;
-      const marginRight = 10;
-      const pageWidth = 2 * (labelWidth + marginLeft + marginRight);
-      // const pageWidth = 148.8; // 10.5 cm in pt (141.7 * 2.1)
-      const pageHeight = 63.75; // 6 cm in pt (85.0 * 2)
-      const availableWidth = labelWidth - marginLeft - marginRight;
-      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-      const italicFont = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+    const ctx = document.createElement("canvas");
+    bwipjs.toCanvas(ctx, {
+      bcid: 'qrcode',
+      text: `${PrintIDProduk}.${sizeSelected}`,
+      scale: 2,
+      height: 2,
+      includetext: false,
+    });
 
-      const ctx = document.createElement("canvas");
-      bwipjs.toCanvas(ctx, {
-        bcid: 'qrcode',
-        text: `${PrintIDProduk}.${sizeSelected}`,
-        scale: 2,
-        height: 2,
-        includetext: false,
+    const barcodeDataUrl = ctx.toDataURL("image/png");
+    const barcodeImage = await pdfDoc.embedPng(barcodeDataUrl);
+
+    for (let i = 0; i < stokReady; i++) {
+      if (i % 2 === 0) {
+        var page = pdfDoc.addPage([pageWidth, pageHeight]);
+      }
+      // const labelWidth = 141.7;
+      const totalLabelWidth = labelWidth + marginLeft + marginRight;
+      const xOffset = (i % 2) * totalLabelWidth + marginLeft;
+      // availableWidth declared above
+      const { width, height } = page.getSize();
+
+      page.drawText(`PO. FARS ${POManual}`, {
+        x: xOffset + 48,
+        y: height - 14,
+        size: 7.3,
+        font: italicFont,
+        color: rgb(0, 0, 0),
       });
 
-      const barcodeDataUrl = ctx.toDataURL("image/png");
-      const barcodeImage = await pdfDoc.embedPng(barcodeDataUrl);
+      page.drawImage(barcodeImage, {
+        x: xOffset - 2,
+        y: height - 50,
+        width: 43,
+        height: 43,
+      });
 
-      for (let i = 0; i < stokReady; i++) {
-        if (i % 2 === 0) {
-          var page = pdfDoc.addPage([pageWidth, pageHeight]);
-        }
-        // const labelWidth = 141.7;
-        const totalLabelWidth = labelWidth + marginLeft + marginRight;
-        const xOffset = (i % 2) * totalLabelWidth + marginLeft;
-        // availableWidth declared above
-        const { width, height } = page.getSize();
+      const idProdukText = `${PrintIDProduk}.${sizeSelected}`;
+      if (sizeSelected.length > 1 && sizeSelected.length < 3) {
+        var fixedFontSize = 6.1;
+      } else if (sizeSelected.length > 2) {
+        var fixedFontSize = 5.7;
+      } else {
+        var fixedFontSize = 6.7;
+      }
 
-        page.drawText(`PO. FARS ${POManual}`, {
-          x: xOffset + 48,
-          y: height - 14,
-          size: 7.3,
-          font: italicFont,
-          color: rgb(0, 0, 0),
-        });
+      // availableWidth declared above
 
-        page.drawImage(barcodeImage, {
-          x: xOffset - 2,
-          y: height - 50,
-          width: 43,
-          height: 43,
-        });
+      // Estimate width and insert extra spacing
+      const rawWidth = font.widthOfTextAtSize(idProdukText, fixedFontSize);
+      const extraSpacing = Math.floor((availableWidth - rawWidth) / (fixedFontSize / 2));
+      const spacedText = idProdukText.split('').join(' '.repeat(extraSpacing > 0 ? 0.5 : 0));
+      const spacedTextWidth = font.widthOfTextAtSize(spacedText, fixedFontSize);
 
-        const idProdukText = `${PrintIDProduk}.${sizeSelected}`;
-        if (sizeSelected.length > 1 && sizeSelected.length < 3) {
-          var fixedFontSize = 6.1;
-        } else if (sizeSelected.length > 2) {
-          var fixedFontSize = 5.7;
-        } else {
-          var fixedFontSize = 6.7;
-        }
+      page.drawText(spacedText, {
+        x: xOffset - 42 + (availableWidth - spacedTextWidth) / 2,
+        y: height - 56,
+        size: fixedFontSize,
+        font: font,
+        color: rgb(0, 0, 0),
+      });
 
-        // availableWidth declared above
+      // --- WRAP PRODUK TEXT (max 22 chars per line) ---
+      const wrapProdukText = (
+        text: string,
+        maxCharsPerLine: number,
+        maxLines: number = 3
+      ) => {
+        const words = (text || "").trim().split(/\s+/).filter(Boolean);
+        const lines: string[] = [];
 
-        // Estimate width and insert extra spacing
-        const rawWidth = font.widthOfTextAtSize(idProdukText, fixedFontSize);
-        const extraSpacing = Math.floor((availableWidth - rawWidth) / (fixedFontSize / 2));
-        const spacedText = idProdukText.split('').join(' '.repeat(extraSpacing > 0 ? 0.5 : 0));
-        const spacedTextWidth = font.widthOfTextAtSize(spacedText, fixedFontSize);
+        let current = "";
 
-        page.drawText(spacedText, {
-          x: xOffset - 42 + (availableWidth - spacedTextWidth) / 2,
-          y: height - 56,
-          size: fixedFontSize,
-          font: font,
-          color: rgb(0, 0, 0),
-        });
-
-        // --- WRAP PRODUK TEXT (max 22 chars per line) ---
-        const wrapProdukText = (
-          text: string,
-          maxCharsPerLine: number,
-          maxLines: number = 3
-        ) => {
-          const words = (text || "").trim().split(/\s+/).filter(Boolean);
-          const lines: string[] = [];
-
-          let current = "";
-
-          const pushCurrent = () => {
-            if (current && lines.length < maxLines) lines.push(current);
-            current = "";
-          };
-
-          for (const word of words) {
-            if (lines.length >= maxLines) break;
-
-            // If a single word is longer than the limit, split it across lines
-            if (word.length > maxCharsPerLine) {
-              // flush current line first
-              pushCurrent();
-              let start = 0;
-              while (start < word.length && lines.length < maxLines) {
-                lines.push(word.slice(start, start + maxCharsPerLine));
-                start += maxCharsPerLine;
-              }
-              continue;
-            }
-
-            const candidate = current ? `${current} ${word}` : word;
-            if (candidate.length <= maxCharsPerLine) {
-              current = candidate;
-            } else {
-              pushCurrent();
-              current = word;
-            }
-          }
-
-          // push remainder
-          if (lines.length < maxLines) pushCurrent();
-
-          return lines;
+        const pushCurrent = () => {
+          if (current && lines.length < maxLines) lines.push(current);
+          current = "";
         };
 
-        const truncatedProdukLines = wrapProdukText(PrintProduk, 22, 3);
-        for (let i = 0; i < truncatedProdukLines.length; i++) {
-          page.drawText(truncatedProdukLines[i], {
-            x: xOffset + 48,
-            y: height - 25 - (i * 10),
-            size: 9.5,
-            font: font,
-            color: rgb(0, 0, 0),
-          });
+        for (const word of words) {
+          if (lines.length >= maxLines) break;
+
+          // If a single word is longer than the limit, split it across lines
+          if (word.length > maxCharsPerLine) {
+            // flush current line first
+            pushCurrent();
+            let start = 0;
+            while (start < word.length && lines.length < maxLines) {
+              lines.push(word.slice(start, start + maxCharsPerLine));
+              start += maxCharsPerLine;
+            }
+            continue;
+          }
+
+          const candidate = current ? `${current} ${word}` : word;
+          if (candidate.length <= maxCharsPerLine) {
+            current = candidate;
+          } else {
+            pushCurrent();
+            current = word;
+          }
         }
 
-        if (sizeSelected.length > 1 && sizeSelected.length < 3) {
-          var fixedFontHarga = 11.5;
-        } else if (sizeSelected.length > 2) {
-          var fixedFontHarga = 10;
-        } else {
-          var fixedFontHarga = 12;
-        }
+        // push remainder
+        if (lines.length < maxLines) pushCurrent();
 
-        page.drawText(`IDR. ${PrintPrice.toLocaleString('id-ID')}`, {
+        return lines;
+      };
+
+      const truncatedProdukLines = wrapProdukText(PrintProduk, 22, 3);
+      for (let i = 0; i < truncatedProdukLines.length; i++) {
+        page.drawText(truncatedProdukLines[i], {
           x: xOffset + 48,
-          y: 10,
-          size: fixedFontHarga,
-          font: boldFont,
-          color: rgb(0, 0, 0),
-        });
-
-        // Draw a rectangle and center the size text inside it
-        const sizeText = `${sizeSelected}`;
-        const sizeFontSize = 13;
-        const sizeTextWidth = boldFont.widthOfTextAtSize(sizeText, sizeFontSize);
-        const boxWidth = sizeTextWidth + 7;
-        const boxHeight = 16;
-        let boxX: number;
-        let boxY: number = 8;
-
-        if (sizeSelected.length > 1 && sizeSelected.length < 3) {
-          boxX = xOffset + 124 - 3;
-        } else if (sizeSelected.length > 2) {
-          boxX = xOffset + 116 - 3;
-        } else {
-          boxX = xOffset + 130 - 3;
-        }
-
-        page.drawRectangle({
-          x: boxX,
-          y: boxY,
-          width: boxWidth,
-          height: boxHeight,
-          borderColor: rgb(0, 0, 0),
-          borderWidth: 0.5,
-        });
-
-        page.drawText(sizeText, {
-          x: boxX + 3.7,
-          y: boxY + 3.4,
-          size: sizeFontSize,
-          font: boldFont,
+          y: height - 25 - (i * 10),
+          size: 9.5,
+          font: font,
           color: rgb(0, 0, 0),
         });
       }
 
-      const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      window.open(url);
-    } else {
-      const pdfDoc = await PDFDocument.create();
-      // const pageWidth = 297.6; // 10.5 cm in pt (141.7 * 2.1)
-      const labelWidth = 141.7;
-      const marginLeft = 10;
-      const marginRight = 10;
-      const pageWidth = 2 * (labelWidth + marginLeft + marginRight);
-      // const pageWidth = 148.8; // 10.5 cm in pt (141.7 * 2.1)
-      const pageHeight = 63.75; // 6 cm in pt (85.0 * 2)
-      const availableWidth = labelWidth - marginLeft - marginRight;
-      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-      const italicFont = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
-
-      const ctx = document.createElement("canvas");
-      bwipjs.toCanvas(ctx, {
-        bcid: 'qrcode',
-        text: `${PrintIDProduk}.${sizeSelected}`,
-        scale: 2,
-        height: 2,
-        includetext: false,
-      });
-
-      const barcodeDataUrl = ctx.toDataURL("image/png");
-      const barcodeImage = await pdfDoc.embedPng(barcodeDataUrl);
-
-      for (let i = 0; i < stokReady; i++) {
-        if (i % 2 === 0) {
-          var page = pdfDoc.addPage([pageWidth, pageHeight]);
-        }
-        // const labelWidth = 141.7;
-        const totalLabelWidth = labelWidth + marginLeft + marginRight;
-        const xOffset = (i % 2) * totalLabelWidth + marginLeft;
-        // availableWidth declared above
-        const { width, height } = page.getSize();
-
-        page.drawText(`PO. SBTL ${POManual}`, {
-          x: xOffset + 48,
-          y: height - 14,
-          size: 7.3,
-          font: italicFont,
-          color: rgb(0, 0, 0),
-        });
-
-        page.drawImage(barcodeImage, {
-          x: xOffset - 2,
-          y: height - 50,
-          width: 43,
-          height: 43,
-        });
-
-        const idProdukText = `${PrintIDProduk}.${sizeSelected}`;
-        if (sizeSelected.length > 1 && sizeSelected.length < 3) {
-          var fixedFontSize = 6.1;
-        } else if (sizeSelected.length > 2) {
-          var fixedFontSize = 5.7;
-        } else {
-          var fixedFontSize = 6.7;
-        }
-
-        // availableWidth declared above
-
-        // Estimate width and insert extra spacing
-        const rawWidth = font.widthOfTextAtSize(idProdukText, fixedFontSize);
-        const extraSpacing = Math.floor((availableWidth - rawWidth) / (fixedFontSize / 2));
-        const spacedText = idProdukText.split('').join(' '.repeat(extraSpacing > 0 ? 0.5 : 0));
-        const spacedTextWidth = font.widthOfTextAtSize(spacedText, fixedFontSize);
-
-        page.drawText(spacedText, {
-          x: xOffset - 42 + (availableWidth - spacedTextWidth) / 2,
-          y: height - 56,
-          size: fixedFontSize,
-          font: font,
-          color: rgb(0, 0, 0),
-        });
-
-        // --- WRAP PRODUK TEXT (max 22 chars per line) ---
-        const wrapProdukText = (
-          text: string,
-          maxCharsPerLine: number,
-          maxLines: number = 2
-        ) => {
-          const words = (text || "").trim().split(/\s+/).filter(Boolean);
-          const lines: string[] = [];
-
-          let current = "";
-
-          const pushCurrent = () => {
-            if (current && lines.length < maxLines) lines.push(current);
-            current = "";
-          };
-
-          for (const word of words) {
-            if (lines.length >= maxLines) break;
-
-            // If a single word is longer than the limit, split it across lines
-            if (word.length > maxCharsPerLine) {
-              // flush current line first
-              pushCurrent();
-              let start = 0;
-              while (start < word.length && lines.length < maxLines) {
-                lines.push(word.slice(start, start + maxCharsPerLine));
-                start += maxCharsPerLine;
-              }
-              continue;
-            }
-
-            const candidate = current ? `${current} ${word}` : word;
-            if (candidate.length <= maxCharsPerLine) {
-              current = candidate;
-            } else {
-              pushCurrent();
-              current = word;
-            }
-          }
-
-          // push remainder
-          if (lines.length < maxLines) pushCurrent();
-
-          return lines;
-        };
-
-        const truncatedProdukLines = wrapProdukText(PrintProduk, 22, 2);
-        for (let i = 0; i < truncatedProdukLines.length; i++) {
-          page.drawText(truncatedProdukLines[i], {
-            x: xOffset + 48,
-            y: height - 25 - (i * 10),
-            size: 9.5,
-            font: font,
-            color: rgb(0, 0, 0),
-          });
-        }
-
-        if (sizeSelected.length > 1 && sizeSelected.length < 3) {
-          var fixedFontHarga = 11.5;
-        } else if (sizeSelected.length > 2) {
-          var fixedFontHarga = 10;
-        } else {
-          var fixedFontHarga = 13;
-        }
-
-        page.drawText(`IDR. ${PrintPrice.toLocaleString('id-ID')}`, {
-          x: xOffset + 48,
-          y: 10,
-          size: fixedFontHarga,
-          font: boldFont,
-          color: rgb(0, 0, 0),
-        });
-
-        // Draw a rectangle and center the size text inside it
-        const sizeText = `${sizeSelected}`;
-        const sizeFontSize = 13;
-        const sizeTextWidth = boldFont.widthOfTextAtSize(sizeText, sizeFontSize);
-        const boxWidth = sizeTextWidth + 7;
-        const boxHeight = 16;
-        let boxX: number;
-        let boxY: number = 8;
-
-        if (sizeSelected.length > 1 && sizeSelected.length < 3) {
-          boxX = xOffset + 126 - 3;
-        } else if (sizeSelected.length > 2) {
-          boxX = xOffset + 116 - 3;
-        } else {
-          boxX = xOffset + 134 - 3;
-        }
-
-        page.drawRectangle({
-          x: boxX,
-          y: boxY,
-          width: boxWidth,
-          height: boxHeight,
-          borderColor: rgb(0, 0, 0),
-          borderWidth: 0.5,
-        });
-
-        page.drawText(sizeText, {
-          x: boxX + 3.7,
-          y: boxY + 3.4,
-          size: sizeFontSize,
-          font: boldFont,
-          color: rgb(0, 0, 0),
-        });
+      if (sizeSelected.length > 1 && sizeSelected.length < 3) {
+        var fixedFontHarga = 11.5;
+      } else if (sizeSelected.length > 2) {
+        var fixedFontHarga = 10;
+      } else {
+        var fixedFontHarga = 12;
       }
 
-      const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      window.open(url);
+      page.drawText(`IDR. ${PrintPrice.toLocaleString('id-ID')}`, {
+        x: xOffset + 48,
+        y: 10,
+        size: fixedFontHarga,
+        font: boldFont,
+        color: rgb(0, 0, 0),
+      });
+
+      // Draw a rectangle and center the size text inside it
+      const sizeText = `${sizeSelected}`;
+      const sizeFontSize = 13;
+      const sizeTextWidth = boldFont.widthOfTextAtSize(sizeText, sizeFontSize);
+      const boxWidth = sizeTextWidth + 7;
+      const boxHeight = 16;
+      let boxX: number;
+      let boxY: number = 8;
+
+      if (sizeSelected.length > 1 && sizeSelected.length < 3) {
+        boxX = xOffset + 124 - 3;
+      } else if (sizeSelected.length > 2) {
+        boxX = xOffset + 116 - 3;
+      } else {
+        boxX = xOffset + 130 - 3;
+      }
+
+      page.drawRectangle({
+        x: boxX,
+        y: boxY,
+        width: boxWidth,
+        height: boxHeight,
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 0.5,
+      });
+
+      page.drawText(sizeText, {
+        x: boxX + 3.7,
+        y: boxY + 3.4,
+        size: sizeFontSize,
+        font: boldFont,
+        color: rgb(0, 0, 0),
+      });
     }
+
+    const pdfBytes = await pdfDoc.save();
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    window.open(url);
+
 
   }
 

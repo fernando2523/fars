@@ -1071,6 +1071,7 @@ export default function DaftarProduk() {
       const productItem = detail.find((d: any) => d.size === vars.sku.split('.')[1]);
 
       if (productItem) {
+        const skuParts = vars.sku.split('.');
         warehouseList.forEach((warehouse: any) => {
           let existing = groupedStockList.find((entry) => entry.warehouseId === warehouse.id);
           if (!existing) {
@@ -1079,7 +1080,7 @@ export default function DaftarProduk() {
           }
 
           existing.stockList.push({
-            masterSku: `${productItem.id_produk}.${productItem.size}.${warehouse.code}`,
+            masterSku: `${skuParts[0]}.${skuParts[1]}.${warehouse.code}`,
             action: "OVER_WRITE",
             quantity: parseInt(productItem.qty),
             warehouseId: warehouse.id,
@@ -1490,9 +1491,9 @@ export default function DaftarProduk() {
         const product = detail.find((details: any) => details.size === vars.sku.split('.')[1]);
 
         if (product.size === vars.sku.split('.')[1]) {
-
+          const skuParts = vars.sku.split('.');
           stockList.push({
-            masterSku: id_produk + "." + product.size + "." + idWare,
+            masterSku: skuParts[0] + "." + skuParts[1] + "." + idWare,
             action: "OVER_WRITE",
             quantity: product.stok_baru,
             warehouseId: shopId,

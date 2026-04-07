@@ -47,6 +47,9 @@ const Layout = (props: PropsWithChildren) => {
         }
     }
 
+    // State untuk toggle mobile sidebar
+    const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
     const [openMenumode, setopenMenumode] = useState(false);
 
     function openMenu() {
@@ -144,7 +147,15 @@ const Layout = (props: PropsWithChildren) => {
                                 <div className="ml-4 flex cursor-pointer items-center h-10 w-auto px-2 " onClick={() => toogleActiveStyles()} >
                                     <i className="fi fi-sr-menu-burger w-[1.12rem] h-[1.12rem] text-center text-[1.12rem] leading-4"></i>
                                 </div>
-                            </>) : null}
+                            </>
+                        ) : (
+                            <>
+                                {/* Tombol toggle sidebar di mobile */}
+                                <div className="ml-3 flex cursor-pointer items-center h-10 w-auto px-2" onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}>
+                                    <i className="fi fi-sr-menu-burger w-[1.12rem] h-[1.12rem] text-center text-[1.12rem] leading-4"></i>
+                                </div>
+                            </>
+                        )}
                     </>)}
 
                 <div className="max-height-[80px] w-[130px] ml-5">
@@ -164,6 +175,7 @@ const Layout = (props: PropsWithChildren) => {
                 <div className="relative flex gap-2 items-center mr-5 justify-center">
                     <button
                         onClick={() => setShowNotification(!showNotification)}
+                        style={{ display: screenSize.width < 1200 ? 'none' : undefined }}
                         className="relative flex items-center px-2 py-1 rounded hover:bg-gray-50"
                     >
                         <fa.FaBell className="text-xl text-gray-700" />
@@ -565,9 +577,29 @@ const Layout = (props: PropsWithChildren) => {
                 </ul>
             </div >
 
+            {/* Mobile Sidebar - toggle open/hide, hanya 2 menu */}
+            {screenSize.width < 1200 && (
+                <div className={`${mobileSidebarOpen ? "left-0" : "left-[-5rem]"} fixed top-[60px] w-16 h-screen bg-white shadow-md z-10 flex flex-col pt-4 gap-1 pb-20 duration-200`}>
+                    {/* Menu 1: Daftar Produk */}
+                    <a href="/products/daftar_produk">
+                        <div className={`flex flex-col items-center py-3 px-1 rounded-lg mx-1 cursor-pointer ${router.asPath.startsWith('/products/daftar_produk') ? 'bg-gray-200 font-bold' : 'hover:bg-gray-100'}`}>
+                            <i className="fi fi-rr-box-alt text-lg leading-none"></i>
+                            <span className="text-[9px] text-center mt-1 leading-tight">Produk</span>
+                        </div>
+                    </a>
+                    {/* Menu 2: Picking List */}
+                    <a href="/pickinglist">
+                        <div className={`flex flex-col items-center py-3 px-1 rounded-lg mx-1 cursor-pointer ${router.asPath.startsWith('/pickinglist') ? 'bg-gray-200 font-bold' : 'hover:bg-gray-100'}`}>
+                            <i className="fi fi-rr-clipboard-list text-lg leading-none"></i>
+                            <span className="text-[9px] text-center mt-1 leading-tight">Picking</span>
+                        </div>
+                    </a>
+                </div>
+            )}
+
             {/* <div className="grid grid-cols-[16rem_1fr] h-full"> */}
             <div className="h-screen pt-[60px] " >
-                <div className={`${toggleViewMode ? "grid-cols-[15.3rem_1fr]" : "grid-cols-[0rem_1fr]"} grid h-full duration-200`}>
+                <div className={`${screenSize.width < 1200 ? (mobileSidebarOpen ? "grid-cols-[4rem_1fr]" : "grid-cols-[0rem_1fr]") : toggleViewMode ? "grid-cols-[15.3rem_1fr]" : "grid-cols-[0rem_1fr]"} grid h-full duration-200`}>
                     <div className="h-full bg-[#F4F4F4] pt-5 px-4 ">
                     </div>
 

@@ -358,6 +358,56 @@ const deletependingdata = async (req, res) => {
     }
 };
 
+const getPickingList = async (req, res) => {
+    const data = req.body;
+    try {
+        const result = await Models.getPickingList(data);
+        res.json({ result });
+    } catch (error) {
+        res.json({ message: "Server Error", serverMessage: error });
+    }
+};
+
+const insertPickingList = async (req, res) => {
+    const data = req.body;
+    try {
+        const result = await Models.insertPickingList(data);
+        res.json({ result });
+    } catch (error) {
+        res.json({ message: "Server Error", serverMessage: error });
+    }
+};
+
+const getPickingListData = async (req, res) => {
+    const data = req.body;
+    try {
+        const result = await Models.getPickingListData(data);
+        res.json({ result });
+    } catch (error) {
+        res.json({ message: "Server Error", serverMessage: error });
+    }
+};
+
+const updatePickingList = async (req, res) => {
+    const data = req.body;
+    try {
+        const result = await Models.updatePickingList(data);
+        res.json({ result });
+    } catch (error) {
+        res.json({ message: "Server Error", serverMessage: error });
+    }
+};
+
+const updateStatusPacking = async (req, res) => {
+    const data = req.body;
+    try {
+        const result = await Models.updateStatusPacking(data);
+        res.json({ result });
+    } catch (error) {
+        res.json({ message: "Server Error", serverMessage: error });
+    }
+};
+
 module.exports = {
     productsSales,
     salesProductbarcode,
@@ -381,4 +431,9 @@ module.exports = {
     history_massal,
     get_history_massal,
     deletependingdata,
+    getPickingList,
+    insertPickingList,
+    getPickingListData,
+    updatePickingList,
+    updateStatusPacking,
 };

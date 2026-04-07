@@ -9363,7 +9363,7 @@ const cekbeforeordermassal = async (body) => {
                     id_store: item.id_store,
                     produk: matchedProductRow.produk,
                     size: item.size,
-                    img: matchedProductRow.img,
+                    img: item.gambar_produk || matchedProductRow.img,
                     // harga_jual: parseInt(matchedProductRow.r_price) + parseInt(25000),
                     harga_jual: matchedProductRow.g_price,
                     source: "Gudang : " + matchedProductRow.warehouse,
@@ -9381,7 +9381,7 @@ const cekbeforeordermassal = async (body) => {
                     id_store: item.id_store,
                     produk: null,
                     size: item.size,
-                    img: null,
+                    img: item.gambar_produk || null,
                     harga_jual: null,
                     source: null,
                     qty_ready: 0, // Default value jika data tidak ditemukan

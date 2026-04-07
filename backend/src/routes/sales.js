@@ -29,4 +29,11 @@ router.post("/history_massal", controller.history_massal);
 router.get("/get_history_massal", controller.get_history_massal);
 router.delete("/deletependingdata", controller.deletependingdata);
 
+// Picking List
+router.post("/getpickinglist",      controller.getPickingList);
+router.post("/insertpickinglist",   controller.insertPickingList);
+router.post("/getpickinglistdata",  controller.getPickingListData);
+router.post("/updatepickinglist",   controller.updatePickingList);
+router.post("/updatestatuspacking", controller.updateStatusPacking);
+
 module.exports = router;

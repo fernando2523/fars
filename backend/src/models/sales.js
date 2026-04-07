@@ -243,7 +243,7 @@ const inputSales = async (body) => {
         var [get_purchaseorder] = await connection.query(
           `SELECT AVG(g_price) as g_price FROM tb_produk WHERE id_produk='${data[x].idproduk}' AND id_ware='${data[x].id_ware}'`
         );
-        total_modal = total_modal + Math.round(get_purchaseorder[0].g_price) * data[x].qty;
+        total_modal = total_modal + Math.round(parseInt(get_purchaseorder[0].g_price) - parseInt(100000)) * data[x].qty;
 
         // var [get_purchaseorder] = await connection.query(
         //   `SELECT AVG(g_price) as g_price FROM tb_produk WHERE id_produk='${data[x].idproduk}' AND id_ware='${data[x].id_ware}'`
@@ -251,6 +251,8 @@ const inputSales = async (body) => {
         // total_modal = total_modal + (parseInt(Math.round(get_purchaseorder[0].g_price)) - parseInt(50000)) * data[x].qty;
       }
     }
+    console.log("total_modal", total_modal);
+
 
     if (total_amount < total_modal) {
       return {
@@ -2671,4 +2673,140 @@ module.exports = {
   history_massal,
   get_history_massal,
   deletependingdata,
+  getPickingList,
+  insertPickingList,
+  getPickingListData,
+  updatePickingList,
+  updateStatusPacking,
 };
+
+// ── Picking List ─────────────────────────────────────────────────────────────
+
+// 1. Cek no_pesanan di tb_invoice, lalu ambil item order yg cocok id_produk+size
+async function getPickingList(body) {
+  const connection = await dbPool.getConnection();
+  try {
+    const { no_pesanan, id_produk, size } = body;
+
+    // Cek apakah no_pesanan ada di tb_invoice
+    const [invoice] = await connection.query(
+      `SELECT id_pesanan, customer, sales_channel, jasa_kirim, status_pesanan
+       FROM tb_invoice WHERE id_pesanan = ? LIMIT 1`,
+      [no_pesanan]
+    );
+    if (invoice.length === 0) {
+      return { found: false, orderItem: null };
+    }
+
+    // Left join tb_invoice + tb_order, filter by id_produk & size
+    const [items] = await connection.query(
+      `SELECT
+         tb_order.id_pesanan, tb_order.id_produk,
+         tb_order.produk,     tb_order.size, tb_order.qty
+       FROM tb_invoice
+       LEFT JOIN tb_order ON tb_invoice.id_pesanan = tb_order.id_pesanan
+       WHERE tb_invoice.id_pesanan = ?
+         AND tb_order.id_produk    = ?
+         AND tb_order.size         = ?
+       LIMIT 1`,
+      [no_pesanan, id_produk, size]
+    );
+
+    return {
+      found:     true,
+      invoice:   invoice[0],
+      orderItem: items.length > 0 ? items[0] : null,
+    };
+  } finally {
+    connection.release();
+  }
+}
+
+// 2. Insert satu record ke tb_picking_list
+async function insertPickingList(body) {
+  const connection = await dbPool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const { no_pesanan, id_produk, size, qty, users } = body;
+    const tanggal_skrg = date.format(new Date(), "YYYY-MM-DD");
+
+    await connection.query(
+      `INSERT INTO tb_picking_list
+         (tanggal, no_pesanan, id_produk, size, qty, users, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+      [tanggal_skrg, no_pesanan, id_produk, size, qty, users]
+    );
+    await connection.commit();
+    return { success: true };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+// 3. Ambil data tb_picking_list (default: hari ini)
+async function getPickingListData(body) {
+  const connection = await dbPool.getConnection();
+  try {
+    const tanggal = body.tanggal || date.format(new Date(), "YYYY-MM-DD");
+    const [data] = await connection.query(
+      `SELECT
+         pl.id, pl.tanggal, pl.no_pesanan, pl.id_produk, pl.size, pl.qty,
+         pl.users, pl.created_at,
+         (SELECT tb_order.produk
+          FROM tb_order
+          WHERE tb_order.id_pesanan = pl.no_pesanan
+            AND tb_order.id_produk  = pl.id_produk
+            AND tb_order.size       = pl.size
+          LIMIT 1) AS produk
+       FROM tb_picking_list pl
+       WHERE pl.tanggal = ?
+       ORDER BY pl.id DESC`,
+      [tanggal]
+    );
+    return data;
+  } finally {
+    connection.release();
+  }
+}
+
+// 4. Update record tb_picking_list
+async function updatePickingList(body) {
+  const connection = await dbPool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const { id, qty, size } = body;
+    await connection.query(
+      `UPDATE tb_picking_list SET qty = ?, size = ?, updated_at = NOW() WHERE id = ?`,
+      [qty, size, id]
+    );
+    await connection.commit();
+    return { success: true };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+async function updateStatusPacking(body) {
+  const connection = await dbPool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const { order_id, status_packing } = body;
+    await connection.query(
+      `UPDATE tb_order SET status_packing = ?, updated_at = NOW() WHERE id = ?`,
+      [status_packing, order_id]
+    );
+    await connection.commit();
+    return { success: true };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    await connection.release();
+  }
+}

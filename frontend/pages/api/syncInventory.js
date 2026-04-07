@@ -45,10 +45,15 @@ async function postWithRetry(fn, {
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
             const res = await fn();
-            if (res?.data?.code === 'SUCCESS') return res;
-            throw new Error(res?.data?.message || 'API returned non-success');
+            if (res?.data?.code === 'SUCCESS') {
+                console.log(`✅ [${label}] BERHASIL (attempt ${attempt})`);
+                return res;
+            }
+            const msg = res?.data?.message || 'API returned non-success';
+            console.warn(`⚠️  [${label}] attempt ${attempt} — code: ${res?.data?.code} | msg: ${msg}`);
+            throw new Error(msg);
         } catch (err) {
-            console.error(`❌ ${label} attempt ${attempt} failed`);
+            console.error(`❌ [${label}] attempt ${attempt} GAGAL: ${err.message}`);
             if (attempt === retries) throw err;
             await delay(delayMs);
         }
@@ -108,7 +113,13 @@ async function proccesSyncInventory() {
                         spu: item.spu,
                         skus: (item.variationBriefs || [])
                             .map(variation => String(variation.sku || "").split(".")[1])
-                            .filter(Boolean)
+                            .filter(Boolean),
+                        variations: (item.variationBriefs || [])
+                            .map(variation => {
+                                const parts = String(variation.sku || "").split(".");
+                                return { id_produk: parts[0], size: parts[1] };
+                            })
+                            .filter(v => v.id_produk && v.size)
                     });
                 }
             });
@@ -451,41 +462,57 @@ async function matchProduct(allProducts, result_detail) {
 
         allProducts.forEach(item => {
             if (!groupedBySpu[item.spu]) {
-                groupedBySpu[item.spu] = new Set();
+                groupedBySpu[item.spu] = { sizes: new Set(), variations: [] };
             }
-            item.skus.forEach(sku => groupedBySpu[item.spu].add(sku));
+            item.skus.forEach(sku => groupedBySpu[item.spu].sizes.add(sku));
+            (item.variations || []).forEach(v => {
+                const key = `${v.id_produk}.${v.size}`;
+                if (!groupedBySpu[item.spu].variations.some(e => `${e.id_produk}.${e.size}` === key)) {
+                    groupedBySpu[item.spu].variations.push(v);
+                }
+            });
         });
 
-        const groupedAllProducts = Object.entries(groupedBySpu).map(([spu, skuSet]) => ({
+        const groupedAllProducts = Object.entries(groupedBySpu).map(([spu, data]) => ({
             spu,
-            skus: Array.from(skuSet)
+            skus: Array.from(data.sizes),
+            variations: data.variations
         }));
 
         let allCekProductLocal = [];
         for (const product of groupedAllProducts) {
-            const [cekProductLocal] = await connection.query(
-                `SELECT 
-                    tb_produk.id_produk, 
-                    tb_produk.produk, 
-                    tb_variation.size,
-                    SUM(tb_variation.qty) AS qty, 
-                    MAX(s.ip) AS ip
-                FROM tb_produk
-                LEFT JOIN tb_variation 
-                    ON tb_produk.id_produk = tb_variation.id_produk 
-                    AND tb_produk.id_ware   = tb_variation.id_ware
-                LEFT JOIN (
-                    SELECT id_area, MAX(ip) AS ip
-                    FROM tb_store
-                    GROUP BY id_area
-                ) AS s ON tb_variation.id_area = s.id_area
-                WHERE tb_produk.id_produk = ? 
-                    AND tb_produk.id_ware != "WARE-0003"
-                    -- AND tb_produk.id_produk = '1024000023'  -- (debug filter kamu, boleh dihapus nanti)
-                GROUP BY tb_produk.id_produk, tb_produk.produk, tb_variation.size`,
-                [product.spu]
-            );
-            allCekProductLocal.push(...cekProductLocal);
+            // Ambil id_produk unik dari SKU variasi (bukan dari spu),
+            // karena SKU bisa punya id_produk berbeda dari SPU-nya di Ginee
+            const varIds = product.variations && product.variations.length > 0
+                ? [...new Set(product.variations.map(v => v.id_produk).filter(Boolean))]
+                : [product.spu];
+
+            console.log(`🔍 SPU: ${product.spu} → varIds DB: [${varIds.join(', ')}]`);
+
+            for (const varId of varIds) {
+                const [cekProductLocal] = await connection.query(
+                    `SELECT
+                        tb_produk.id_produk,
+                        tb_produk.produk,
+                        tb_variation.size,
+                        SUM(tb_variation.qty) AS qty,
+                        MAX(s.ip) AS ip
+                    FROM tb_produk
+                    LEFT JOIN tb_variation
+                        ON tb_produk.id_produk = tb_variation.id_produk
+                        AND tb_produk.id_ware   = tb_variation.id_ware
+                    LEFT JOIN (
+                        SELECT id_area, MAX(ip) AS ip
+                        FROM tb_store
+                        GROUP BY id_area
+                    ) AS s ON tb_variation.id_area = s.id_area
+                    WHERE tb_produk.id_produk = ?
+                        AND tb_produk.id_ware != "WARE-0003"
+                    GROUP BY tb_produk.id_produk, tb_produk.produk, tb_variation.size`,
+                    [varId]
+                );
+                allCekProductLocal.push(...cekProductLocal);
+            }
         }
         console.log("allCekProductLocal", allCekProductLocal);
 
@@ -529,9 +556,16 @@ async function matchProduct(allProducts, result_detail) {
         // console.log("Stock_parting", Stock_parting);
 
         const filteredCekProductLocal = allCekProductLocal.filter(item => {
-            return groupedAllProducts.some(product =>
-                product.spu === item.id_produk && product.skus.includes(item.size)
-            );
+            return groupedAllProducts.some(product => {
+                // Prioritaskan matching lewat variations (SKU id_produk + size)
+                if (product.variations && product.variations.length > 0) {
+                    return product.variations.some(v =>
+                        v.id_produk === item.id_produk && v.size === item.size
+                    );
+                }
+                // Fallback ke spu jika variations tidak tersedia
+                return product.spu === item.id_produk && product.skus.includes(item.size);
+            });
         });
 
         const hasilSplit = (allCekProductLocal.find(item => item.ip)?.ip || "").split(" ");
@@ -924,21 +958,23 @@ async function matchProduct(allProducts, result_detail) {
 
         async function processAvailableWarehouse(entry) {
             if (!entry.stockList || entry.stockList.length === 0) {
-                console.warn(`⚠️ Skip ${entry.warehouseId}`);
+                console.warn(`⚠️  Skip warehouse ${entry.warehouseId} — stockList kosong`);
                 return;
             }
 
-            console.log(`🏭 START available-stock ${entry.warehouseId}`);
+            const total = entry.stockList.length;
+            const totalChunks = Math.ceil(total / 10);
+            console.log(`\n🏭 START available-stock warehouse: ${entry.warehouseId} | total SKU: ${total} | chunks: ${totalChunks}`);
             const chunkSize = 10;
 
             for (let i = 0; i < entry.stockList.length; i += chunkSize) {
                 const chunk = entry.stockList.slice(i, i + chunkSize);
+                const chunkNo = i / chunkSize + 1;
 
-                console.log(
-                    `➡️ ${entry.warehouseId} | chunk ${i / chunkSize + 1}/${Math.ceil(entry.stockList.length / chunkSize)}`
-                );
+                console.log(`\n➡️  [${entry.warehouseId}] chunk ${chunkNo}/${totalChunks} — ${chunk.length} SKU:`);
+                chunk.forEach(s => console.log(`     • ${s.masterSku} → qty: ${s.quantity}`));
 
-                await postWithRetry(
+                const res = await postWithRetry(
                     () => axios({
                         method: "POST",
                         url: REQUEST_HOST + "/openapi/v1/oms/stock/available-stock/update",
@@ -949,13 +985,19 @@ async function matchProduct(allProducts, result_detail) {
                             'Authorization': tokenAutoInsertAvailable
                         },
                     }),
-                    { label: `AVAILABLE ${entry.warehouseId}` }
+                    { label: `AVAILABLE ${entry.warehouseId} chunk ${chunkNo}/${totalChunks}` }
                 );
+
+                // Log detail response Ginee jika ada failedList
+                if (res?.data?.data?.failedList?.length > 0) {
+                    console.warn(`⚠️  [${entry.warehouseId}] chunk ${chunkNo} — ada ${res.data.data.failedList.length} SKU GAGAL:`);
+                    res.data.data.failedList.forEach(f => console.warn(`     ✗ ${f.masterSku} | reason: ${f.message || f.reason || JSON.stringify(f)}`));
+                }
 
                 await delay(700);
             }
 
-            console.log(`✅ DONE ${entry.warehouseId}`);
+            console.log(`\n✅ SELESAI warehouse: ${entry.warehouseId} (${total} SKU diproses)\n`);
         }
         // ===============================
         // RUN AVAILABLE STOCK (SEMI PARALEL)

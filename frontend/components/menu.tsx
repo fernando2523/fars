@@ -172,6 +172,16 @@ const Items = [
         ],
     },
 
+    // ── Picking List ────────────────────────────────────────────────────────────
+    {
+        roles: ["SUPER-ADMIN", "HEAD-AREA", "HEAD-BRAND", "HEAD-WAREHOUSE", "HEAD-STORE", "CASHIER"],
+        title: "Picking List",
+        href: "/pickinglist",
+        text: "Picking List",
+        icon_item: "fi fi-rr-clipboard-list",
+        path: "pickinglist",
+    },
+
     // ── Inventory (Admin / Warehouse) ───────────────────────────────────────────
     {
         roles: ["SUPER-ADMIN", "HEAD-AREA", "HEAD-BRAND", "HEAD-WAREHOUSE"],

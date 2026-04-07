@@ -354,7 +354,7 @@ export default function AddOrder() {
       .then(function (response) {
         setpilih_warehouse("open");
         setdatasize(response.data.result.datasize);
-        setdatahargajual(response.data.result.get_hargajual[0].r_price);
+        setdatahargajual(response.data.result.get_hargajual[0].r_price - 100000);
         setdatagudangawal(response.data.result.gudang_awal[0].warehouse);
       });
     // }
@@ -481,11 +481,11 @@ export default function AddOrder() {
                       source: cariwaress_nama,
                       id_ware: response.data.result.id_ware,
                       // start di tambahin jamed
-                      harga_jual: response.data.result.get_hargajual[0].r_price,
+                      harga_jual: response.data.result.get_hargajual[0].r_price - 100000,
                       // end baru di tambahin jamed
                       payment: "PAID",
                     };
-                    setdatahargajual(response.data.result.get_hargajual[0].r_price);
+                    setdatahargajual(response.data.result.get_hargajual[0].r_price - 100000);
                     setRowsData([...rowsData, rowsInput]);
                     settotalQty(totalQty + 1);
 
