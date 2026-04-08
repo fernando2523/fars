@@ -917,6 +917,8 @@ export default function AddOrder() {
         .post(`https://api.supplysmooth.id/v1/inputsales`, {
           data: rowsData,
           id_pesanan: data.id_pesanan,
+          jasa_kirim: data.jasa_kirim,
+          resi: data.resi,
           tanggal: date,
           id_store: data.store,
           total_amount: TotalPembayaran,
@@ -1425,9 +1427,10 @@ export default function AddOrder() {
               Add Sales Online Shop
             </span>
           </div>
-          <div className="px-4 grid grid-cols-3 gap-3 mb-3 pt-0">
+          <div className="px-4 grid grid-cols-5 gap-3 mb-3 pt-0">
+
+            {/* 1. Tanggal */}
             <div>
-              {/* <span className="font-bold">Tanggal Order</span> */}
               <div className="rounded-lg ml-auto w-full mt-2 flex flex-row items-center justify-end h-[42px]">
                 <Flatpickr
                   className="text-start h-full rounded-lg w-full bg-white py-2.5 px-5 text-gray-700 focus:outline-none border"
@@ -1438,38 +1441,17 @@ export default function AddOrder() {
                     mode: "single",
                     dateFormat: "Y-m-d",
                     enableTime: false,
-                    // disable: [
-                    //   function (date) {
-                    //     return !(date.getDate() % 8);
-                    //   }
-                    // ]
                     onClose: function (selectedDates, dateStr, instance) {
                       setDate(dateStr);
                     },
                   }}
                 />
-
                 <i className="fi fi-rr-calendar w-[1.12rem] h-[1.12rem] text-center text-gray-500 text-[1.12rem] leading-4 absolute mr-5"></i>
               </div>
             </div>
 
+            {/* 2. Select Store Channel */}
             <div>
-              {/* <span className="font-bold">ID Pesanan</span> */}
-              <input
-                className={`${errors.id_pesanan ? "border-red-400" : ""
-                  } h-auto rounded-lg w-full bg-white py-2 px-5 mt-2 text-gray-700 focus:outline-none border text-base`}
-                type="text"
-                placeholder="Entry ID Sales Olshop"
-                autoComplete="off"
-                {...register("id_pesanan", { required: true })}
-              />
-              {errors.id_pesanan && (
-                <div className="text-sm italic">This field is required</div>
-              )}
-            </div>
-
-            <div>
-              {/* <span className="font-bold">Store Channel</span> */}
               <div className="flex flex-wrap items-center mt-2 justify-end">
                 {"SUPER-ADMIN" === Cookies.get("auth_role") ||
                   "HEAD-AREA" === Cookies.get("auth_role") ||
@@ -1492,7 +1474,6 @@ export default function AddOrder() {
                       })}
                       className={`${errors.store ? "border-red-400" : ""
                         } appearance-none h-auto cursor-pointer rounded-lg w-full bg-white py-2 px-5 focus:outline-none border text-base`}
-                      placeholder="Pilih Store"
                     >
                       <option value="">Select Store Channel</option>
                       {list_store}
@@ -1501,29 +1482,21 @@ export default function AddOrder() {
                 ) : (
                   <>
                     {fixed_store.length != 0 ? (
-                      <>
-                        <select
-                          {...register("store", { required: true })}
-                          className={`${errors.store ? "border-red-400" : ""
-                            } appearance-none h-auto cursor-pointer rounded-lg w-full bg-white py-2 px-5 focus:outline-none border text-base`}
-                          placeholder="Pilih Store"
-                        >
-                          {fixed_store}
-                        </select>
-                      </>
+                      <select
+                        {...register("store", { required: true })}
+                        className={`${errors.store ? "border-red-400" : ""
+                          } appearance-none h-auto cursor-pointer rounded-lg w-full bg-white py-2 px-5 focus:outline-none border text-base`}
+                      >
+                        {fixed_store}
+                      </select>
                     ) : (
-                      <>
-                        <select
-                          {...register("store", { required: true })}
-                          className={`${errors.store ? "border-red-400" : ""
-                            } appearance-none h-auto cursor-pointer rounded-lg w-full bg-white py-2 px-5 focus:outline-none border text-base`}
-                          placeholder="Pilih Store"
-                        >
-                          <option value="">
-                            Only for Online Store Employees
-                          </option>
-                        </select>
-                      </>
+                      <select
+                        {...register("store", { required: true })}
+                        className={`${errors.store ? "border-red-400" : ""
+                          } appearance-none h-auto cursor-pointer rounded-lg w-full bg-white py-2 px-5 focus:outline-none border text-base`}
+                      >
+                        <option value="">Only for Online Store Employees</option>
+                      </select>
                     )}
                   </>
                 )}
@@ -1533,6 +1506,52 @@ export default function AddOrder() {
                 <div className="text-sm italic">This field is required</div>
               )}
             </div>
+
+            {/* 3. No Pesanan */}
+            <div>
+              <input
+                className={`${errors.id_pesanan ? "border-red-400" : ""
+                  } h-auto rounded-lg w-full bg-white py-2 px-5 mt-2 text-gray-700 focus:outline-none border text-base`}
+                type="text"
+                placeholder="Entry ID Sales Olshop"
+                autoComplete="off"
+                {...register("id_pesanan", { required: true })}
+              />
+              {errors.id_pesanan && (
+                <div className="text-sm italic">This field is required</div>
+              )}
+            </div>
+
+            {/* 4. Jasa Kirim */}
+            <div>
+              <input
+                className={`${errors.jasa_kirim ? "border-red-400" : ""
+                  } h-auto rounded-lg w-full bg-white py-2 px-5 mt-2 text-gray-700 focus:outline-none border text-base`}
+                type="text"
+                placeholder="Jasa Kirim"
+                autoComplete="off"
+                {...register("jasa_kirim", { required: true })}
+              />
+              {errors.jasa_kirim && (
+                <div className="text-sm italic">This field is required</div>
+              )}
+            </div>
+
+            {/* 5. No Resi */}
+            <div>
+              <input
+                className={`${errors.resi ? "border-red-400" : ""
+                  } h-auto rounded-lg w-full bg-white py-2 px-5 mt-2 text-gray-700 focus:outline-none border text-base`}
+                type="text"
+                placeholder="No. Resi"
+                autoComplete="off"
+                {...register("resi", { required: true })}
+              />
+              {errors.resi && (
+                <div className="text-sm italic">This field is required</div>
+              )}
+            </div>
+
           </div>
           <div className="px-4 flex flex-row gap-3 mb-5 items-center">
 

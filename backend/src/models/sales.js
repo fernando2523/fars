@@ -212,7 +212,7 @@ const salesProductbarcode = async (body) => {
 const inputSales = async (body) => {
   const connection = await dbPool.getConnection();
   const tanggal = date.format(new Date(), "YYYY/MM/DD HH:mm:ss");
-  const { data, id_pesanan, tanggal: tanggalOrder, id_store, total_amount, users } = body;
+  const { data, id_pesanan, jasa_kirim, resi, tanggal: tanggalOrder, id_store, total_amount, users } = body;
 
   try {
     await connection.beginTransaction();
@@ -339,8 +339,8 @@ const inputSales = async (body) => {
     const idInvoice = `INV-${lastInvoice.toString().padStart(9, "0")}`;
 
     await connection.query(
-      `INSERT INTO tb_invoice (tanggal_order, id_invoice, id_pesanan, customer, type_customer, sales_channel, amount, diskon_nota, biaya_lainnya, total_amount, selisih, status_pesanan, payment, reseller, users, created_at, updated_at)
-       VALUES ('${tanggalOrder}', '${idInvoice}', '${id_pesanan}', '${id_store}', '${get_store[0].channel}', '${get_store[0].channel}', '${total_amount}', '0', '0', '${total_amount}', '0', 'SELESAI', 'PAID', '-', '${users}', '${tanggal}', '${tanggal}')`
+      `INSERT INTO tb_invoice (tanggal_order, id_invoice, id_pesanan, customer, type_customer, sales_channel, jasa_kirim, resi, amount, diskon_nota, biaya_lainnya, total_amount, selisih, status_pesanan, payment, reseller, users, created_at, updated_at)
+       VALUES ('${tanggalOrder}', '${idInvoice}', '${id_pesanan}', '${id_store}', '${get_store[0].channel}', '${get_store[0].channel}', '${jasa_kirim || ""}', '${resi || ""}', '${total_amount}', '0', '0', '${total_amount}', '0', 'SELESAI', 'PAID', '-', '${users}', '${tanggal}', '${tanggal}')`
     );
 
     // Commit transaction
@@ -2682,40 +2682,48 @@ module.exports = {
 
 // ── Picking List ─────────────────────────────────────────────────────────────
 
-// 1. Cek no_pesanan di tb_invoice, lalu ambil item order yg cocok id_produk+size
+// 1. Cek no_resi di tb_invoice.resi, lalu ambil item order yg cocok id_produk+size
 async function getPickingList(body) {
   const connection = await dbPool.getConnection();
   try {
-    const { no_pesanan, id_produk, size } = body;
+    const { no_resi, id_produk, size } = body;
 
-    // Cek apakah no_pesanan ada di tb_invoice
+    // Cari invoice berdasarkan kolom resi di tb_invoice
     const [invoice] = await connection.query(
       `SELECT id_pesanan, customer, sales_channel, jasa_kirim, status_pesanan
-       FROM tb_invoice WHERE id_pesanan = ? LIMIT 1`,
-      [no_pesanan]
+       FROM tb_invoice WHERE resi = ? LIMIT 1`,
+      [no_resi]
     );
     if (invoice.length === 0) {
       return { found: false, orderItem: null };
     }
+    const id_pesanan = invoice[0].id_pesanan;
 
-    // Left join tb_invoice + tb_order, filter by id_produk & size
-    const [items] = await connection.query(
+    // Ambil semua item di order ini untuk debug dan matching
+    const [allItems] = await connection.query(
       `SELECT
          tb_order.id_pesanan, tb_order.id_produk,
          tb_order.produk,     tb_order.size, tb_order.qty
-       FROM tb_invoice
-       LEFT JOIN tb_order ON tb_invoice.id_pesanan = tb_order.id_pesanan
-       WHERE tb_invoice.id_pesanan = ?
-         AND tb_order.id_produk    = ?
-         AND tb_order.size         = ?
-       LIMIT 1`,
-      [no_pesanan, id_produk, size]
+       FROM tb_order
+       WHERE tb_order.id_pesanan = ?`,
+      [id_pesanan]
     );
 
+    // Filter exact match id_produk + size
+    const matched = allItems.find(
+      row => row.id_produk === id_produk && row.size === size
+    ) || null;
+
     return {
-      found:     true,
-      invoice:   invoice[0],
-      orderItem: items.length > 0 ? items[0] : null,
+      found:      true,
+      invoice:    invoice[0],
+      orderItem:  matched,
+      debug: {
+        id_pesanan,
+        search_id_produk: id_produk,
+        search_size:      size,
+        all_items:        allItems,
+      },
     };
   } finally {
     connection.release();
@@ -2727,17 +2735,36 @@ async function insertPickingList(body) {
   const connection = await dbPool.getConnection();
   try {
     await connection.beginTransaction();
-    const { no_pesanan, id_produk, size, qty, users } = body;
+    const { no_resi, id_produk, size, qty, users } = body;
     const tanggal_skrg = date.format(new Date(), "YYYY-MM-DD");
+
+    // Cari id_pesanan dari kolom resi di tb_invoice
+    const [resiResult] = await connection.query(
+      `SELECT id_pesanan FROM tb_invoice WHERE resi = ? LIMIT 1`,
+      [no_resi]
+    );
+    const id_pesanan = resiResult.length > 0 ? resiResult[0].id_pesanan : no_resi;
+
+    // Cek duplikat: resi + id_produk + size sudah ada di picking list?
+    const [dupCheck] = await connection.query(
+      `SELECT id FROM tb_picking_list
+       WHERE resi = ? AND id_produk = ? AND size = ?
+       LIMIT 1`,
+      [no_resi, id_produk, size]
+    );
+    if (dupCheck.length > 0) {
+      await connection.rollback();
+      return { success: false, duplicate: true };
+    }
 
     await connection.query(
       `INSERT INTO tb_picking_list
-         (tanggal, no_pesanan, id_produk, size, qty, users, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-      [tanggal_skrg, no_pesanan, id_produk, size, qty, users]
+         (tanggal, no_pesanan, resi, id_produk, size, qty, users, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+      [tanggal_skrg, id_pesanan, no_resi, id_produk, size, qty, users]
     );
     await connection.commit();
-    return { success: true };
+    return { success: true, duplicate: false };
   } catch (error) {
     await connection.rollback();
     throw error;
@@ -2753,7 +2780,7 @@ async function getPickingListData(body) {
     const tanggal = body.tanggal || date.format(new Date(), "YYYY-MM-DD");
     const [data] = await connection.query(
       `SELECT
-         pl.id, pl.tanggal, pl.no_pesanan, pl.id_produk, pl.size, pl.qty,
+         pl.id, pl.tanggal, pl.no_pesanan, pl.resi, pl.id_produk, pl.size, pl.qty,
          pl.users, pl.created_at,
          (SELECT tb_order.produk
           FROM tb_order

@@ -17,6 +17,7 @@ interface PickingRecord {
     id: number;
     tanggal: string;
     no_pesanan: string;
+    resi: string | null;
     id_produk: string;
     size: string;
     qty: number;
@@ -35,6 +36,7 @@ interface AggregatedItem {
 interface GroupedRecord {
     key: string;
     no_pesanan: string;
+    resi: string | null;
     id_produk: string;
     produk: string | null;
     users: string;
@@ -59,7 +61,7 @@ const toDateStr = (d: Date) =>
 
 export default function PickingList() {
     // ── Scan input ───────────────────────────────────────────────────
-    const [noPesanan, setNoPesanan] = useState("");
+    const [noResi, setNoResi] = useState("");
     const [barcodeRaw, setBarcodeRaw] = useState("");
     const [parsed, setParsed] = useState<{ id_produk: string; size: string } | null>(null);
 
@@ -89,7 +91,7 @@ export default function PickingList() {
     // ── Mobile camera ────────────────────────────────────────────────
     const [isMobile, setIsMobile] = useState(false);
     const [showCamera, setShowCamera] = useState(false);
-    const [scanTarget, setScanTarget] = useState<"pesanan" | "barcode" | "orderscan">("barcode");
+    const [scanTarget, setScanTarget] = useState<"resi" | "barcode" | "orderscan">("barcode");
     const cameraRef = useRef<any>(null);
 
     useEffect(() => {
@@ -100,7 +102,7 @@ export default function PickingList() {
         return () => window.removeEventListener("resize", check);
     }, []);
 
-    const startScan = (target: "pesanan" | "barcode" | "orderscan") => {
+    const startScan = (target: "resi" | "barcode" | "orderscan") => {
         setScanTarget(target);
         setShowCamera(true);
     };
@@ -122,8 +124,11 @@ export default function PickingList() {
             const scanner = new Html5Qrcode("barcode-camera-reader");
             cameraRef.current = scanner;
 
-            const isPesanan = scanTarget === "pesanan" || scanTarget === "orderscan";
-            const config = isPesanan
+            // orderscan = no. pesanan marketplace → barcode 1D
+            // resi = no. resi pengiriman → QR code
+            // barcode = barcode produk → QR code
+            const isBarcode1D = scanTarget === "orderscan";
+            const config = isBarcode1D
                 ? {
                     fps: 20,
                     qrbox: { width: 320, height: 100 },
@@ -148,8 +153,8 @@ export default function PickingList() {
                     { facingMode: "environment" },
                     config,
                     (decoded: string) => {
-                        if (scanTarget === "pesanan") {
-                            setNoPesanan(decoded);
+                        if (scanTarget === "resi") {
+                            setNoResi(decoded);
                             setOrderItem(null);
                         } else if (scanTarget === "barcode") {
                             setBarcodeRaw(decoded);
@@ -184,28 +189,34 @@ export default function PickingList() {
     const inputBarcodeRef = useRef<HTMLInputElement>(null);
     const submitRef = useRef<HTMLButtonElement>(null);
 
-    // ── Parse barcode: id_produk.size (split di titik terakhir) ──────
+    // ── Parse barcode: format {id_produk}.{size} atau {id_produk}.{size}.{id_ware}
+    // Selalu split di titik PERTAMA → id_produk = bagian[0], size = bagian[1]
     useEffect(() => {
         const val = barcodeRaw.trim();
         if (!val) { setParsed(null); return; }
-        const dot = val.lastIndexOf(".");
+        const dot = val.indexOf(".");
         if (dot > 0) {
-            setParsed({ id_produk: val.substring(0, dot), size: val.substring(dot + 1) });
+            const id_produk = val.substring(0, dot);
+            const rest = val.substring(dot + 1);
+            // Ambil size = bagian sebelum titik berikutnya (jika ada id_ware di belakang)
+            const dot2 = rest.indexOf(".");
+            const size = dot2 > 0 ? rest.substring(0, dot2) : rest;
+            setParsed({ id_produk, size });
         } else {
             setParsed(null);
         }
     }, [barcodeRaw]);
 
-    // ── Auto-advance: No. Pesanan → Barcode ──────────────────────────
+    // ── Auto-advance: No. Resi → Barcode ────────────────────────────
     useEffect(() => {
-        if (!noPesanan.trim()) return;
+        if (!noResi.trim()) return;
         const t = setTimeout(() => inputBarcodeRef.current?.focus(), 200);
         return () => clearTimeout(t);
-    }, [noPesanan]);
+    }, [noResi]);
 
     // ── Auto-advance: Barcode → Submit ───────────────────────────────
     useEffect(() => {
-        if (!barcodeRaw.trim() || !noPesanan.trim()) return;
+        if (!barcodeRaw.trim() || !noResi.trim()) return;
         const t = setTimeout(() => submitRef.current?.focus(), 200);
         return () => clearTimeout(t);
     }, [barcodeRaw]);
@@ -235,29 +246,40 @@ export default function PickingList() {
 
     // ── Reset form scan ──────────────────────────────────────────────
     const handleReset = () => {
-        setNoPesanan(""); setBarcodeRaw(""); setParsed(null);
+        setNoResi(""); setBarcodeRaw(""); setParsed(null);
         setOrderItem(null); setConfirmQty(1);
         setTimeout(() => inputPesananRef.current?.focus(), 100);
     };
 
     // ── Submit: cek pesanan di backend ───────────────────────────────
     const handleSubmit = async () => {
-        if (!noPesanan.trim() || !parsed) return;
+        if (!noResi.trim() || !parsed) return;
         setIsChecking(true);
         setOrderItem(null);
         try {
             const res = await axios.post("https://api.supplysmooth.id/v1/getpickinglist", {
-                no_pesanan: noPesanan.trim(),
+                no_resi: noResi.trim(),
                 id_produk: parsed.id_produk,
                 size: parsed.size,
             });
             const result = res.data.result;
             if (!result.found) {
-                toast.error("No. Pesanan tidak ditemukan!");
+                toast.error("No. Resi tidak ditemukan!");
                 return;
             }
             if (!result.orderItem) {
-                toast.error("Produk tidak ditemukan dalam pesanan ini.");
+                // Debug: tampilkan semua item di order ini di console
+                if (result.debug) {
+                    console.log("[PickingList] id_pesanan ditemukan:", result.debug.id_pesanan);
+                    console.log("[PickingList] Cari id_produk:", result.debug.search_id_produk, "| size:", result.debug.search_size);
+                    console.log("[PickingList] Semua item dalam order:", result.debug.all_items);
+                }
+                const allItems: { id_produk: string; size: string }[] = result.debug?.all_items || [];
+                const itemList = allItems.map((i: { id_produk: string; size: string }) => `${i.id_produk} / ${i.size}`).join(", ");
+                toast.error(
+                    `Produk tidak ditemukan dalam pesanan ini.\nItem tersedia: ${itemList || "-"}`,
+                    { autoClose: 6000 }
+                );
                 return;
             }
             setOrderItem(result.orderItem);
@@ -274,13 +296,20 @@ export default function PickingList() {
         if (!orderItem || confirmQty < 1) return;
         setIsSaving(true);
         try {
-            await axios.post("https://api.supplysmooth.id/v1/insertpickinglist", {
-                no_pesanan: noPesanan.trim(),
+            const res = await axios.post("https://api.supplysmooth.id/v1/insertpickinglist", {
+                no_resi: noResi.trim(),
                 id_produk: parsed!.id_produk,
                 size: parsed!.size,
                 qty: confirmQty,
                 users: Cookies.get("auth_username") || "-",
             });
+            if (res.data.result?.duplicate) {
+                toast.warning(
+                    `No. Resi "${noResi.trim()}" dengan produk & size ini sudah ada di picking list!`,
+                    { autoClose: 4000 }
+                );
+                return;
+            }
             toast.success("Berhasil ditambahkan ke picking list ✓");
             handleReset();
             fetchPickingData();
@@ -343,7 +372,7 @@ export default function PickingList() {
         }
     };
 
-    const canSubmit = !!noPesanan.trim() && !!parsed;
+    const canSubmit = !!noResi.trim() && !!parsed;
 
     // ── Role-based access ─────────────────────────────────────────────
     const authRole = Cookies.get("auth_role") ?? "";
@@ -363,6 +392,7 @@ export default function PickingList() {
                 map.set(key, {
                     key,
                     no_pesanan: row.no_pesanan,
+                    resi: row.resi || null,
                     id_produk: row.id_produk,
                     produk: row.produk,
                     users: row.users,
@@ -395,7 +425,7 @@ export default function PickingList() {
                     Picking List
                 </h1>
                 <p className="text-xs text-gray-500 mt-0.5">
-                    Scan No. Pesanan lalu scan Barcode Produk, kemudian Submit
+                    Scan No. Resi lalu scan Barcode Produk, kemudian Submit
                 </p>
             </div>
 
@@ -403,30 +433,30 @@ export default function PickingList() {
             <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
                 <div className="flex flex-col md:flex-row gap-3">
 
-                    {/* Input 1: No. Pesanan */}
+                    {/* Input 1: No. Resi */}
                     <div className="flex-1">
                         <label className="block text-[10px] font-semibold text-gray-400 uppercase mb-1">
-                            No. Pesanan Marketplace
+                            No. Resi
                         </label>
                         <div className="flex items-center border border-gray-200 rounded-lg bg-gray-50 px-3 focus-within:ring-2 focus-within:ring-gray-300">
                             <fa.FaBarcode className="text-gray-400 text-base shrink-0 mr-2" />
                             <input
                                 ref={inputPesananRef}
                                 type="text"
-                                value={noPesanan}
-                                onChange={(e) => { setNoPesanan(e.target.value); setOrderItem(null); }}
-                                placeholder="Scan / ketik no. pesanan..."
+                                value={noResi}
+                                onChange={(e) => { setNoResi(e.target.value); setOrderItem(null); }}
+                                placeholder="Scan / ketik no. resi..."
                                 className="flex-1 py-2.5 text-sm bg-transparent focus:outline-none"
                                 autoFocus
                             />
-                            {noPesanan && (
-                                <button onClick={() => { setNoPesanan(""); setOrderItem(null); }}
+                            {noResi && (
+                                <button onClick={() => { setNoResi(""); setOrderItem(null); }}
                                     className="text-gray-300 hover:text-gray-500 ml-1">
                                     <fa.FaTimes className="text-xs" />
                                 </button>
                             )}
                             {isMobile && (
-                                <button type="button" onClick={() => startScan("pesanan")}
+                                <button type="button" onClick={() => startScan("resi")}
                                     className="text-gray-400 hover:text-gray-600 ml-2 shrink-0">
                                     <fa.FaCamera className="text-base" />
                                 </button>
@@ -495,7 +525,7 @@ export default function PickingList() {
             {/* ── Cek Detail Pesanan Ginee ──────────────────────────────── */}
             <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
                 <label className="block text-[10px] font-semibold text-gray-400 uppercase mb-1 flex items-center gap-1">
-                    <fa.FaSearch className="text-indigo-400" /> Cek Detail Pesanan Ginee
+                    <fa.FaSearch className="text-indigo-400" /> Cek Detail Pesanan
                 </label>
                 <div className="flex items-center border border-gray-200 rounded-lg bg-gray-50 px-3 focus-within:ring-2 focus-within:ring-indigo-300 w-full">
                     <fa.FaClipboardList className="text-gray-400 text-base shrink-0 mr-2" />
@@ -638,6 +668,9 @@ export default function PickingList() {
                                                 {grp.produk || grp.id_produk}
                                             </p>
                                             <p className="text-[10px] text-gray-400 truncate mt-0.5">{grp.no_pesanan}</p>
+                                            {grp.resi && (
+                                                <p className="text-[10px] text-gray-400 truncate">Resi: {grp.resi}</p>
+                                            )}
                                         </div>
                                         <span className="text-[10px] font-semibold text-gray-400 bg-gray-100 rounded px-2 py-0.5 shrink-0">
                                             #{gIdx + 1}
@@ -674,6 +707,7 @@ export default function PickingList() {
                                         <th className="px-4 py-3 text-left border-b-2 border-gray-200">Waktu</th>
                                         <th className="px-4 py-3 text-left border-b-2 border-gray-200">Users</th>
                                         <th className="px-4 py-3 text-left border-b-2 border-gray-200">No. Pesanan</th>
+                                        <th className="px-4 py-3 text-left border-b-2 border-gray-200">No. Resi</th>
                                         <th className="px-4 py-3 text-left border-b-2 border-gray-200">Produk</th>
                                         <th className="px-4 py-3 text-center border-b-2 border-gray-200">Size</th>
                                         <th className="px-4 py-3 text-center border-b-2 border-gray-200">Qty</th>
@@ -702,6 +736,9 @@ export default function PickingList() {
                                                         </td>
                                                         <td rowSpan={grp.items.length} className={`${mergedCls} text-gray-700 text-xs`}>
                                                             {grp.no_pesanan}
+                                                        </td>
+                                                        <td rowSpan={grp.items.length} className={`${mergedCls} text-gray-500 text-xs`}>
+                                                            {grp.resi || <span className="text-gray-300">-</span>}
                                                         </td>
                                                         <td rowSpan={grp.items.length} className={`${mergedCls}`}>
                                                             <p className="font-medium text-gray-800">{grp.produk || "-"}</p>
@@ -832,7 +869,7 @@ export default function PickingList() {
                         <div className="flex items-center gap-2 text-white">
                             <fa.FaCamera className="text-lg" />
                             <span className="font-semibold text-sm">
-                                {scanTarget === "barcode" ? "Scan Barcode Produk" : "Scan No. Pesanan"}
+                                {scanTarget === "barcode" ? "Scan Barcode Produk" : scanTarget === "resi" ? "Scan No. Resi" : "Scan No. Pesanan"}
                             </span>
                         </div>
                         <button onClick={stopScan}
@@ -846,12 +883,12 @@ export default function PickingList() {
                         <div id="barcode-camera-reader" className="w-full h-full" />
                         {/* Overlay frame */}
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <div className={`border-2 border-white/50 rounded-xl relative ${scanTarget === "barcode" ? "w-64 h-64" : "w-80 h-24"}`}>
+                            <div className={`border-2 border-white/50 rounded-xl relative ${scanTarget === "orderscan" ? "w-80 h-24" : "w-64 h-64"}`}>
                                 <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-white rounded-tl-lg" />
                                 <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-white rounded-tr-lg" />
                                 <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-white rounded-bl-lg" />
                                 <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-white rounded-br-lg" />
-                                {scanTarget !== "barcode" && (
+                                {scanTarget === "orderscan" && (
                                     <div className="absolute inset-x-2 top-1/2 h-0.5 bg-red-400/80 animate-pulse" />
                                 )}
                             </div>
@@ -863,7 +900,9 @@ export default function PickingList() {
                         <p className="text-white/60 text-xs">
                             {scanTarget === "barcode"
                                 ? "Arahkan kamera ke barcode produk (format: id_produk.size)"
-                                : "Arahkan kamera ke barcode No. Pesanan"}
+                                : scanTarget === "resi"
+                                    ? "Arahkan kamera ke QR Code No. Resi"
+                                    : "Arahkan kamera ke barcode No. Pesanan"}
                         </p>
                     </div>
                 </div>

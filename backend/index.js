@@ -1,7 +1,7 @@
 require("dotenv").config();
 process.env.TZ = "Asia/Jakarta";
-const PORT = process.env.PORT || 4000;
-// const PORT = 8181;
+// const PORT = process.env.PORT || 4000;
+const PORT = 8181;
 const express = require("express");
 const cors = require("cors");
 
@@ -43,3 +43,20 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Running di Port ${PORT}`);
 });
+
+// ── DB Migrations ─────────────────────────────────────────────────────────────
+const dbPool = require("./src/config/database");
+(async () => {
+  try {
+    const conn = await dbPool.getConnection();
+    // Tambah kolom resi ke tb_picking_list (jika belum ada)
+    await conn.query(
+      `ALTER TABLE tb_picking_list
+         ADD COLUMN IF NOT EXISTS resi VARCHAR(255) DEFAULT NULL AFTER no_pesanan`
+    );
+    conn.release();
+    console.log("[Migration] tb_picking_list.resi: OK");
+  } catch (e) {
+    console.log("[Migration] Note:", e.message);
+  }
+})();
