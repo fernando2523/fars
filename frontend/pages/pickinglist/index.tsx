@@ -69,6 +69,8 @@ export default function PickingList() {
     const [isChecking, setIsChecking] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [orderItem, setOrderItem] = useState<OrderItem | null>(null);
+    // id_pesanan yang sudah di-resolve dari Ginee (by trackingNo)
+    const [resolvedIdPesanan, setResolvedIdPesanan] = useState<string>("");
     const [confirmQty, setConfirmQty] = useState(1);
 
     // ── Tabel + filter tanggal ───────────────────────────────────────
@@ -247,43 +249,44 @@ export default function PickingList() {
     // ── Reset form scan ──────────────────────────────────────────────
     const handleReset = () => {
         setNoResi(""); setBarcodeRaw(""); setParsed(null);
-        setOrderItem(null); setConfirmQty(1);
+        setOrderItem(null); setConfirmQty(1); setResolvedIdPesanan("");
         setTimeout(() => inputPesananRef.current?.focus(), 100);
     };
 
-    // ── Submit: cek pesanan di backend ───────────────────────────────
+    // ── Submit: resolve resi ke Ginee dulu → lalu cek produk di DB lokal ──
     const handleSubmit = async () => {
         if (!noResi.trim() || !parsed) return;
         setIsChecking(true);
         setOrderItem(null);
+        setResolvedIdPesanan("");
+
         try {
-            const res = await axios.post("https://api.supplysmooth.id/v1/getpickinglist", {
-                no_resi: noResi.trim(),
-                id_produk: parsed.id_produk,
-                size: parsed.size,
-            });
-            const result = res.data.result;
-            if (!result.found) {
-                toast.error("No. Resi tidak ditemukan!");
-                return;
-            }
-            if (!result.orderItem) {
-                // Debug: tampilkan semua item di order ini di console
-                if (result.debug) {
-                    console.log("[PickingList] id_pesanan ditemukan:", result.debug.id_pesanan);
-                    console.log("[PickingList] Cari id_produk:", result.debug.search_id_produk, "| size:", result.debug.search_size);
-                    console.log("[PickingList] Semua item dalam order:", result.debug.all_items);
+            // ── Langkah 1: Cari externalOrderId di Ginee by trackingNo ───────
+            let idPesananFinal = "";
+            try {
+                const gineeRes = await axios.post("/api/getorderbytracking", {
+                    trackingNo: noResi.trim(),
+                });
+                if (gineeRes.data.status === "success" && gineeRes.data.externalOrderId) {
+                    idPesananFinal = gineeRes.data.externalOrderId;
+                    console.log("[PickingList] Ginee resolve:", noResi.trim(), "→", idPesananFinal);
+                } else {
+                    console.warn("[PickingList] Ginee tidak menemukan resi:", noResi.trim(), gineeRes.data.message);
                 }
-                const allItems: { id_produk: string; size: string }[] = result.debug?.all_items || [];
-                const itemList = allItems.map((i: { id_produk: string; size: string }) => `${i.id_produk} / ${i.size}`).join(", ");
+            } catch (gineeErr: any) {
+                console.warn("[PickingList] Gagal panggil Ginee:", gineeErr?.message);
+            }
+
+            if (!idPesananFinal) {
                 toast.error(
-                    `Produk tidak ditemukan dalam pesanan ini.\nItem tersedia: ${itemList || "-"}`,
-                    { autoClose: 6000 }
+                    `No. resi "${noResi.trim()}" tidak ditemukan di Ginee. Pastikan no. resi benar.`,
+                    { autoClose: 5000 }
                 );
                 return;
             }
-            setOrderItem(result.orderItem);
-            setConfirmQty(1);
+
+            // ── Langkah 2: Cek produk di DB lokal ───────────────────────────
+            await checkWithIdPesanan(idPesananFinal);
         } catch {
             toast.error("Gagal menghubungi server.");
         } finally {
@@ -291,18 +294,68 @@ export default function PickingList() {
         }
     };
 
+    // ── Helper: cek item di DB lokal by id_pesanan ───────────────────
+    const checkWithIdPesanan = async (idPesanan: string) => {
+        const res = await axios.post("https://api.supplysmooth.id/v1/getpickinglist", {
+            id_pesanan: idPesanan,
+            id_produk: parsed!.id_produk,
+            size: parsed!.size,
+        });
+        const result = res.data?.result;
+
+        // Backend error (result undefined) → tampilkan pesan server error
+        if (!result) {
+            console.error("[PickingList] Backend error:", res.data);
+            toast.error("Server backend error. Pastikan backend sudah direstart setelah update.", { autoClose: 7000 });
+            return;
+        }
+
+        if (!result.found) {
+            toast.error(
+                `No. pesanan "${idPesanan}" tidak ditemukan di database lokal.\nPastikan pesanan sudah di-sync.`,
+                { autoClose: 6000 }
+            );
+            return;
+        }
+
+        if (!result.orderItem) {
+            if (result.debug) {
+                console.log("[PickingList] id_pesanan ditemukan:", result.debug.id_pesanan);
+                console.log("[PickingList] Cari id_produk:", result.debug.search_id_produk, "| size:", result.debug.search_size);
+                console.log("[PickingList] Semua item dalam order:", result.debug.all_items);
+            }
+            const allItems: { id_produk: string; size: string }[] = result.debug?.all_items || [];
+            const itemList = allItems.map((i: { id_produk: string; size: string }) => `${i.id_produk} / ${i.size}`).join(", ");
+            toast.error(
+                `Produk tidak ditemukan dalam pesanan ini.\nItem tersedia: ${itemList || "-"}`,
+                { autoClose: 6000 }
+            );
+            return;
+        }
+
+        setResolvedIdPesanan(idPesanan);
+        setOrderItem(result.orderItem);
+        setConfirmQty(1);
+    };
+
     // ── Submit Pesanan: simpan ke tb_picking_list ────────────────────
     const handleSubmitPesanan = async () => {
         if (!orderItem || confirmQty < 1) return;
         setIsSaving(true);
         try {
-            const res = await axios.post("https://api.supplysmooth.id/v1/insertpickinglist", {
+            const insertPayload: Record<string, any> = {
                 no_resi: noResi.trim(),
                 id_produk: parsed!.id_produk,
                 size: parsed!.size,
                 qty: confirmQty,
                 users: Cookies.get("auth_username") || "-",
-            });
+            };
+            // Jika id_pesanan sudah di-resolve dari Ginee, sertakan agar insert tidak perlu cari by resi
+            if (resolvedIdPesanan) {
+                insertPayload.id_pesanan = resolvedIdPesanan;
+            }
+
+            const res = await axios.post("https://api.supplysmooth.id/v1/insertpickinglist", insertPayload);
             if (res.data.result?.duplicate) {
                 toast.warning(
                     `No. Resi "${noResi.trim()}" dengan produk & size ini sudah ada di picking list!`,
@@ -524,7 +577,7 @@ export default function PickingList() {
 
             {/* ── Cek Detail Pesanan Ginee ──────────────────────────────── */}
             <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
-                <label className="block text-[10px] font-semibold text-gray-400 uppercase mb-1 flex items-center gap-1">
+                <label className="block text-[10px] font-semibold text-gray-400 uppercase mb-1 items-center gap-1">
                     <fa.FaSearch className="text-indigo-400" /> Cek Detail Pesanan
                 </label>
                 <div className="flex items-center border border-gray-200 rounded-lg bg-gray-50 px-3 focus-within:ring-2 focus-within:ring-indigo-300 w-full">

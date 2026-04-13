@@ -142,6 +142,8 @@ export default async function handler(req, res) {
 
         // Gabungkan orderId dari seluruh batch dan ambil satu taskId dari batch yang sukses
         const aggregatedOrdersId = [];
+        // Map orderId → { trackingNo, logisticsProviderName } dari hasil polling
+        const trackingMap = {};
         let taskId = "";
         for (const result of batchResults) {
             if (result.status === "success" && result.data && result.data.data && result.data.data.taskId) {
@@ -150,8 +152,26 @@ export default async function handler(req, res) {
                 }
                 // Lakukan polling untuk memastikan batch tersebut selesai
                 try {
-                    await pollShippingResult(result.data.data.taskId);
+                    const pollResult = await pollShippingResult(result.data.data.taskId);
                     aggregatedOrdersId.push(...result.orders);
+
+                    // Coba ekstrak trackingNo dari polling result (get-shipping-result response)
+                    // Struktur: pollResult.data.shippingResults[].{ orderId, code, trackingNo, ... }
+                    // atau      pollResult.data.results[].{ orderId, code, trackingNo, ... }
+                    const pollData = pollResult?.data || {};
+                    const shippingResults = pollData.shippingResults || pollData.results || [];
+                    console.log("[pollResult] data keys:", Object.keys(pollData));
+                    console.log("[pollResult] shippingResults sample:", JSON.stringify(shippingResults).slice(0, 500));
+
+                    for (const r of shippingResults) {
+                        if (r.orderId) {
+                            trackingMap[String(r.orderId)] = {
+                                // Ginee uses trackingNo in V3 context
+                                trackingNo: r.trackingNo || r.logisticsTrackingNumber || "",
+                                logisticsProviderName: r.logisticsProviderName || r.shipmentProvider || "",
+                            };
+                        }
+                    }
                 } catch (pollError) {
                     console.error(`Polling error for task ${result.data.data.taskId}:`, pollError.message);
                 }
@@ -168,6 +188,7 @@ export default async function handler(req, res) {
                 taskId: taskId || ""
             },
             ordersId: aggregatedOrdersId,
+            trackingMap,          // { orderId: { trackingNo, logisticsProviderName } }
             extra: null,
             pricingStrategy: "PAY"
         };

@@ -36,4 +36,7 @@ router.post("/getpickinglistdata",  controller.getPickingListData);
 router.post("/updatepickinglist",   controller.updatePickingList);
 router.post("/updatestatuspacking", controller.updateStatusPacking);
 
+// Update resi + jasa_kirim ke tb_invoice setelah atur pengiriman
+router.post("/updateresimassal",    controller.updateResiMassal);
+
 module.exports = router;

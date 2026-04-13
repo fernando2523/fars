@@ -1895,6 +1895,9 @@ export default function GetBaseorder() {
         }, 1000);
         console.log("channelid", channelid);
 
+        // trackingMap dari RTS polling: { orderId: { trackingNo, logisticsProviderName } }
+        let trackingMapFromRTS: Record<string, any> = {};
+
         if (channelid != "TOKOPEDIA_ID") {
           const response = await axios({
             method: "POST",
@@ -1906,6 +1909,8 @@ export default function GetBaseorder() {
           });
           const finalResponse = response.data;
           console.log("Final aggregated response from backend:", finalResponse);
+          trackingMapFromRTS = finalResponse.trackingMap || {};
+          console.log("[trackingMap from RTS satuan]", trackingMapFromRTS);
 
           // Misalnya, kita dapat menampilkan data ordersId ke UI:
           const ordersData = finalResponse.ordersId.map((orderId: any) => ({ orderId }));
@@ -1944,6 +1949,8 @@ export default function GetBaseorder() {
           });
           const finalResponse = response.data;
           console.log("Final aggregated response from backend:", finalResponse);
+          trackingMapFromRTS = finalResponse.trackingMap || {};
+          console.log("[trackingMap from RTS satuan]", trackingMapFromRTS);
 
           // Misalnya, kita dapat menampilkan data ordersId ke UI:
           const ordersData = finalResponse.ordersId.map((orderId: any) => ({ orderId }));
@@ -1979,6 +1986,76 @@ export default function GetBaseorder() {
         console.log("data", data);
         console.log("dataakhir", dataakhir);
         console.log("dataGagal", dataGagal);
+
+        // ── Ambil logisticsTrackingNumber dari Ginee setelah RTS berhasil ──
+        // Strategi:
+        // 1. Coba pakai trackingMap dari polling get-shipping-result (field: trackingNo)
+        // 2. Fallback: BatchGetOrderItems (field: logisticsInfos[0].logisticsTrackingNumber)
+        if (dataakhir.length > 0) {
+          try {
+            const updatePayload: any[] = [];
+
+            for (const o of dataakhir) {
+              if (!o.externalOrderId) continue;
+              const extId = String(o.externalOrderId);
+              const oid = String(o.orderId || "");
+
+              // Cek dulu di trackingMapFromRTS (dari get-shipping-result)
+              const fromRTS = trackingMapFromRTS[oid] || trackingMapFromRTS[extId];
+              if (fromRTS?.trackingNo) {
+                updatePayload.push({
+                  id_pesanan: extId,
+                  resi: fromRTS.trackingNo,
+                  jasa_kirim: fromRTS.logisticsProviderName || o.logisticsProviderName || "",
+                });
+              }
+            }
+
+            console.log("[updateResi] from trackingMapFromRTS:", updatePayload.length, "orders");
+
+            // Orders yang tracking-nya tidak ada di RTS map → fetch via BatchGetOrderItems
+            const missingIds = dataakhir.filter((o: any) => {
+              const extId = String(o.externalOrderId || "");
+              const oid = String(o.orderId || "");
+              const fromRTS = trackingMapFromRTS[oid] || trackingMapFromRTS[extId];
+              return !fromRTS?.trackingNo && o.orderId && o.externalOrderId;
+            });
+
+            if (missingIds.length > 0) {
+              console.log("[updateResi] Fetching via BatchGetOrderItems for", missingIds.length, "orders");
+              const ordersPayload = missingIds.map((o: any) => ({
+                orderId: String(o.orderId),
+                externalOrderId: String(o.externalOrderId),
+              }));
+              const resiRes = await axios.post("/api/getlogisticsresi", { orders: ordersPayload });
+              const resiItems: any[] = resiRes.data?.items || [];
+              console.log("[updateResi] BatchGetOrderItems resiItems:", resiItems);
+
+              for (const r of resiItems) {
+                if (r.resi) {
+                  updatePayload.push({
+                    id_pesanan: r.externalOrderId,
+                    resi: r.resi,
+                    jasa_kirim: r.jasa_kirim || "",
+                  });
+                }
+              }
+            }
+
+            if (updatePayload.length > 0) {
+              console.log("[updateResi] Saving to tb_invoice:", updatePayload);
+              const updateRes = await axios.post("https://api.supplysmooth.id/v1/updateresimassal", {
+                items: updatePayload,
+              });
+              console.log("[updateResi] update result:", updateRes.data);
+            } else {
+              console.warn("[updateResi] Tidak ada resi yang tersedia dari Ginee (trackingMap kosong + BatchGet kosong)");
+            }
+          } catch (resiErr: any) {
+            console.warn("[updateResi] Gagal update resi:", resiErr?.message || resiErr);
+            // Non-fatal: lanjutkan proses meskipun update resi gagal
+          }
+        }
 
         const now = new Date();
         const datePart = now.toISOString().slice(0, 10);

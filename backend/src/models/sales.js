@@ -2678,26 +2678,42 @@ module.exports = {
   getPickingListData,
   updatePickingList,
   updateStatusPacking,
+  updateResiMassal,
 };
 
 // ── Picking List ─────────────────────────────────────────────────────────────
 
-// 1. Cek no_resi di tb_invoice.resi, lalu ambil item order yg cocok id_produk+size
+// 1. Cek pesanan di tb_invoice, lalu ambil item order yg cocok id_produk+size
+// Mendukung dua mode:
+//   - Lookup by resi (no_resi): cari di tb_invoice.resi  [mode lama]
+//   - Lookup by id_pesanan langsung (id_pesanan): cari di tb_invoice.id_pesanan [mode baru via Ginee]
 async function getPickingList(body) {
   const connection = await dbPool.getConnection();
   try {
-    const { no_resi, id_produk, size } = body;
+    const { no_resi, id_pesanan: id_pesanan_direct, id_produk, size } = body;
 
-    // Cari invoice berdasarkan kolom resi di tb_invoice
-    const [invoice] = await connection.query(
-      `SELECT id_pesanan, customer, sales_channel, jasa_kirim, status_pesanan
-       FROM tb_invoice WHERE resi = ? LIMIT 1`,
-      [no_resi]
-    );
-    if (invoice.length === 0) {
+    let invoice_rows;
+
+    if (id_pesanan_direct) {
+      // Mode baru: id_pesanan sudah diketahui (dari Ginee resolve resi → externalOrderId)
+      [invoice_rows] = await connection.query(
+        `SELECT id_pesanan, customer, sales_channel, jasa_kirim, status_pesanan
+         FROM tb_invoice WHERE id_pesanan = ? LIMIT 1`,
+        [id_pesanan_direct]
+      );
+    } else {
+      // Mode lama: cari berdasarkan resi di tb_invoice
+      [invoice_rows] = await connection.query(
+        `SELECT id_pesanan, customer, sales_channel, jasa_kirim, status_pesanan
+         FROM tb_invoice WHERE resi = ? LIMIT 1`,
+        [no_resi]
+      );
+    }
+
+    if (invoice_rows.length === 0) {
       return { found: false, orderItem: null };
     }
-    const id_pesanan = invoice[0].id_pesanan;
+    const id_pesanan = invoice_rows[0].id_pesanan;
 
     // Ambil semua item di order ini untuk debug dan matching
     const [allItems] = await connection.query(
@@ -2716,7 +2732,7 @@ async function getPickingList(body) {
 
     return {
       found:      true,
-      invoice:    invoice[0],
+      invoice:    invoice_rows[0],
       orderItem:  matched,
       debug: {
         id_pesanan,
@@ -2735,15 +2751,21 @@ async function insertPickingList(body) {
   const connection = await dbPool.getConnection();
   try {
     await connection.beginTransaction();
-    const { no_resi, id_produk, size, qty, users } = body;
+    const { no_resi, id_pesanan: id_pesanan_direct, id_produk, size, qty, users } = body;
     const tanggal_skrg = date.format(new Date(), "YYYY-MM-DD");
 
-    // Cari id_pesanan dari kolom resi di tb_invoice
-    const [resiResult] = await connection.query(
-      `SELECT id_pesanan FROM tb_invoice WHERE resi = ? LIMIT 1`,
-      [no_resi]
-    );
-    const id_pesanan = resiResult.length > 0 ? resiResult[0].id_pesanan : no_resi;
+    // Jika id_pesanan sudah dikirim langsung (dari resolve Ginee), gunakan itu
+    // Jika tidak, cari dari kolom resi di tb_invoice (fallback lama)
+    let id_pesanan;
+    if (id_pesanan_direct) {
+      id_pesanan = id_pesanan_direct;
+    } else {
+      const [resiResult] = await connection.query(
+        `SELECT id_pesanan FROM tb_invoice WHERE resi = ? LIMIT 1`,
+        [no_resi]
+      );
+      id_pesanan = resiResult.length > 0 ? resiResult[0].id_pesanan : no_resi;
+    }
 
     // Cek duplikat: resi + id_produk + size sudah ada di picking list?
     const [dupCheck] = await connection.query(
@@ -2835,5 +2857,41 @@ async function updateStatusPacking(body) {
     throw error;
   } finally {
     await connection.release();
+  }
+}
+
+// 6. Update resi + jasa_kirim ke tb_invoice secara massal (setelah atur pengiriman Ginee)
+async function updateResiMassal(body) {
+  const connection = await dbPool.getConnection();
+  try {
+    await connection.beginTransaction();
+    // items: [{ id_pesanan, resi, jasa_kirim }]
+    const { items } = body;
+    if (!Array.isArray(items) || items.length === 0) {
+      return { success: false, message: "items kosong" };
+    }
+
+    let updatedCount = 0;
+    for (const item of items) {
+      const { id_pesanan, resi, jasa_kirim } = item;
+      if (!id_pesanan || !resi) continue;
+      const [result] = await connection.query(
+        `UPDATE tb_invoice
+           SET resi       = ?,
+               jasa_kirim = ?,
+               updated_at = NOW()
+         WHERE id_pesanan = ?`,
+        [resi, jasa_kirim || "", id_pesanan]
+      );
+      updatedCount += result.affectedRows || 0;
+    }
+
+    await connection.commit();
+    return { success: true, updated: updatedCount };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
   }
 }

@@ -4,7 +4,7 @@ const pool = mysql.createPool({
     host: "139.180.215.133", // Ganti dengan host database Anda
     user: "4media",      // Ganti dengan username database Anda
     password: "Kintamani1@#$", // Ganti dengan password database Anda
-    database: "dummycloth", // Ganti dengan nama database Anda
+    database: "fars", // Ganti dengan nama database Anda
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
